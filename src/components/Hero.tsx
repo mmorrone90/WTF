@@ -43,7 +43,7 @@ export default function Hero() {
         <div className="max-w-2xl">
           <h1 className="text-[3.5rem] font-extrabold leading-tight mb-6">
             Discover Your Next
-            <span className="block text-neon-yellow">Style UYQGWYEGQYEGQWYEGYEGW</span>
+            <span className="block text-neon-yellow">Style Shop</span>
           </h1>
           <p className="text-text-grey text-xl mb-8">
             Explore curated collections from emerging designers and iconic brands.
