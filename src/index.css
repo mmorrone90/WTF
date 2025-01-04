@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --neon-yellow: #D7FF34;
+    --neon-cyan: #00FFCA;
+    --dark-grey: #1A1A1A;
+    --text-grey: #A1A1A1;
+  }
+
+  /* Navbar height adjustment */
+  body {
+    @apply bg-black text-white font-space-grotesk;
+    padding-top: 5rem; /* Adjust this value to match the navbar height */
+  }
+
+  @media (min-width: 768px) {
+    body {
+      padding-top: 5rem; /* Same height for larger screens */
+    }
+  }
+
+  h1 {
+    @apply text-[2rem] md:text-[3rem] lg:text-[3.5rem] font-extrabold leading-tight;
+  }
+
+  a {
+    @apply transition-transform duration-200 ease-in-out;
+  }
+
+  @media (prefers-color-scheme: light) {
+    body {
+      @apply bg-white text-black;
+    }
+
+    .neon-button {
+      @apply border-black text-black hover:bg-black hover:text-white;
+    }
+  }
+}
+
+@layer components {
+  /* Button Styles */
+  .neon-button {
+    @apply relative px-6 py-3 bg-transparent border-2 border-neon-yellow text-neon-yellow 
+           font-bold transition-all duration-300 hover:bg-neon-yellow hover:text-black
+           focus:outline-none focus:ring-2 focus:ring-neon-yellow focus:ring-offset-2 focus:ring-offset-black;
+  }
+
+  .neon-button::after {
+    content: '';
+    @apply absolute inset-0 opacity-50 blur-lg bg-neon-yellow -z-10 transition-opacity duration-300;
+  }
+
+  .neon-button:hover::after {
+    @apply opacity-75;
+  }
+
+  /* Navigation Link Styles */
+  .nav-link {
+    @apply relative text-white hover:text-neon-yellow transition-colors duration-200
+           after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 
+           after:h-0.5 after:bg-neon-yellow after:transition-all after:duration-300
+           hover:after:w-full;
+  }
+
+  /* Product Card Styles */
+  .product-card {
+    @apply bg-dark-grey rounded-lg overflow-hidden transform transition-all duration-300
+           hover:scale-105 hover:shadow-[0_0_25px_rgba(215,255,52,0.3)];
+  }
+
+  /* Product Grid Layout */
+  .product-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6;
+  }
+
+  /* Mobile Menu Styles */
+  .mobile-menu {
+    @apply bg-dark-grey px-4 py-6 space-y-4;
+  }
+
+  /* Search Bar */
+  .search-bar {
+    @apply relative w-full bg-dark-grey rounded-full py-2 px-4 pl-10 text-white placeholder-text-grey
+           focus:outline-none focus:ring-2 focus:ring-neon-yellow;
+  }
+
+  .search-bar-icon {
+    @apply absolute left-3 top-1/2 -translate-y-1/2 text-text-grey w-4 h-4;
+  }
+
+  /* Footer Link */
+  .footer-link {
+    @apply text-text-grey hover:text-neon-yellow transition-all duration-300;
+  }
+
+  /* Loading Screen Animation */
+  .loading-screen {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+}
+
+@layer utilities {
+  /* Additional utility classes for margin and padding */
+  .section-padding {
+    @apply px-6 py-12 md:px-12 lg:px-20;
+  }
+
+  .centered-content {
+    @apply flex items-center justify-center;
+  }
+}

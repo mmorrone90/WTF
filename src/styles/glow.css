@@ -1,0 +1,57 @@
+/* Glowing background effect */
+.glow-bg {
+  position: relative;
+  isolation: isolate;
+}
+
+.glow-bg::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    circle at top left,
+    rgba(215, 255, 52, 0.15),
+    rgba(0, 255, 202, 0.15),
+    transparent 50%
+  );
+  z-index: -1;
+  filter: blur(60px);
+  border-radius: inherit;
+}
+
+/* Glowing border effect */
+.glow-border {
+  position: relative;
+}
+
+.glow-border::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    45deg,
+    rgba(215, 255, 52, 0.5),
+    rgba(0, 255, 202, 0.5)
+  );
+  filter: blur(8px);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glow-border:hover::after {
+  opacity: 1;
+}
+
+/* Input glow effect */
+.glow-input {
+  background: rgba(26, 26, 26, 0.8);
+  border: 1px solid rgba(215, 255, 52, 0.1);
+  box-shadow: 0 0 20px rgba(215, 255, 52, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.glow-input:focus {
+  border-color: #D7FF34;
+  box-shadow: 0 0 25px rgba(215, 255, 52, 0.2);
+}
