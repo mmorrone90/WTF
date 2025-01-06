@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import FilterSidebar from '../components/shop/FilterSidebar';
 import ProductGrid from '../components/shop/ProductGrid';
 import HeroGallery from '../components/shop/HeroGallery';
+import BestSellers from '../components/shop/BestSellers';
 import { useProducts } from '../hooks/useProducts';
 
 export default function Shop() {
@@ -51,6 +52,9 @@ export default function Shop() {
           </div>
         </div>
       </section>
+
+      {/* Best Sellers Section */}
+      <BestSellers />
     </main>
   );
 }
