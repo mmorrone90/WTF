@@ -19,7 +19,7 @@ const rightImages = [
 
 export default function HeroGallery() {
   return (
-    <div className="relative h-[80vh] overflow-hidden">
+    <section className="relative h-[80vh] w-full overflow-hidden">
       {/* Background Blur */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-md z-0" />
 
@@ -97,6 +97,6 @@ export default function HeroGallery() {
           </div>
         ))}
       </motion.div>
-    </div>
+    </section>
   );
 }

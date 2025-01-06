@@ -4,4 +4,7 @@ export interface Product {
   brand: string;
   price: number;
   image: string;
+  partnerUrl?: string;
+  rating?: number;
+  originalPrice?: number;
 }
