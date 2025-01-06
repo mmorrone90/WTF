@@ -47,7 +47,11 @@ export default function App() {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="discover" element={<Discover />} />
-            <Route path="shop" element={<Shop />} />
+            <Route path="shop">
+              <Route index element={<Shop />} />
+              <Route path="all-products" element={<Shop />} />
+              <Route path="best-sellers" element={<Shop />} />
+            </Route>
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
             <Route path="support" element={<Support />} />
