@@ -23,7 +23,7 @@ export default function Shop() {
   };
 
   return (
-    <main className="min-h-screen">
+    <>
       {/* Hero Section */}
       <HeroGallery />
       
@@ -55,6 +55,6 @@ export default function Shop() {
 
       {/* Best Sellers Section */}
       <BestSellers />
-    </main>
+    </>
   );
 }

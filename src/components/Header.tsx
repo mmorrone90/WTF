@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Menu, X, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { signOut } from '../lib/auth';
 import Logo from './Logo';
+import Breadcrumb from './Breadcrumb';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuthContext();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -28,7 +39,7 @@ export default function Header() {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-black/95 backdrop-blur-sm border-b border-dark-grey z-50">
+    <header className="fixed top-0 left-0 right-0 bg-black/75 backdrop-blur-md z-50">
       <div className="max-w-container mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -105,9 +116,16 @@ export default function Header() {
         </div>
       </div>
 
+      {/* Breadcrumb */}
+      <div className="bg-transparent">
+        <div className="max-w-container mx-auto px-6">
+          <Breadcrumb />
+        </div>
+      </div>
+
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-dark-grey">
+        <div className="md:hidden bg-black/90 backdrop-blur-md border-t border-dark-grey/20">
           <div className="px-6 py-4 space-y-4">
             <div className="relative">
               <input
