@@ -1,76 +1,68 @@
 import { supabase } from '../lib/supabase';
-import { Product } from '../types/product';
 
-export async function getProductById(id: string): Promise<Product | null> {
+interface ProductData {
+  title: string;
+  category: string;
+  description: string;
+  size: string[];
+  price: number;
+  currency: string;
+  metadata: Record<string, string>;
+  tags: string[];
+  stock: number;
+}
+
+export async function createProduct(data: ProductData) {
+  try {
+    // Get the current user's ID
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user) throw new Error('Not authenticated');
+
+    // Create the product with partner_id
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .insert({
+        name: data.title,
+        description: data.description,
+        size: data.size,
+        price: data.price,
+        currency: data.currency,
+        metadata: data.metadata,
+        tags: data.tags,
+        stock: data.stock,
+        partner_id: user.id // Add partner_id
+      })
+      .select()
+      .single();
+
+    if (productError) throw productError;
+    return product;
+  } catch (error) {
+    console.error('Error creating product:', error);
+    throw error;
+  }
+}
+
+export async function getProducts() {
+  // Get the current user's ID
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('products')
-    .select('*')
-    .eq('id', id)
-    .single();
+    .select(`
+      *,
+      product_images (
+        id,
+        image_url,
+        is_primary
+      )
+    `)
+    .eq('partner_id', user.id) // Filter by partner_id
+    .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching product:', error);
-    return null;
-  }
-
+  if (error) throw error;
   return data;
 }
-
-export async function getRelatedProducts(
-  productId: string,
-  limit: number = 4
-): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .neq('id', productId)
-    .limit(limit);
-
-  if (error) {
-    console.error('Error fetching related products:', error);
-    return [];
-  }
-
-  return data || [];
-}
-
-export async function toggleWishlist(
-  userId: string,
-  productId: string
-): Promise<boolean> {
-  const { data: existing, error: checkError } = await supabase
-    .from('wishlists')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('product_id', productId)
-    .single();
-
-  if (checkError && checkError.code !== 'PGRST116') {
-    console.error('Error checking wishlist:', checkError);
-    return false;
-  }
-
-  if (existing) {
-    const { error: deleteError } = await supabase
-      .from('wishlists')
-      .delete()
-      .eq('user_id', userId)
-      .eq('product_id', productId);
-
-    if (deleteError) {
-      console.error('Error removing from wishlist:', deleteError);
-      return false;
-    }
-    return false;
-  } else {
-    const { error: insertError } = await supabase
-      .from('wishlists')
-      .insert([{ user_id: userId, product_id: productId }]);
-
-    if (insertError) {
-      console.error('Error adding to wishlist:', insertError);
-      return false;
-    }
-    return true;
-  }
-} 

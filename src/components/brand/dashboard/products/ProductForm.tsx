@@ -45,7 +45,6 @@ export default function ProductForm({ initialData, onSubmit, onClose }: ProductF
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && formData.images.length + files.length <= 5) {
-      // TODO: Implement actual image upload to Supabase storage
       const newImages = Array.from(files).map(file => URL.createObjectURL(file));
       setFormData(prev => ({
         ...prev,
@@ -57,6 +56,22 @@ export default function ProductForm({ initialData, onSubmit, onClose }: ProductF
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      price: value === '' ? 0 : Math.max(0, parseFloat(value))
+    }));
+  };
+
+  const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      stock: value === '' ? 0 : Math.max(0, parseInt(value))
+    }));
   };
 
   const addTag = () => {
@@ -211,7 +226,7 @@ export default function ProductForm({ initialData, onSubmit, onClose }: ProductF
               <input
                 type="number"
                 value={formData.price}
-                onChange={e => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
+                onChange={handlePriceChange}
                 className="w-full bg-black/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-neon-yellow"
                 min="0"
                 step="0.01"
@@ -237,7 +252,7 @@ export default function ProductForm({ initialData, onSubmit, onClose }: ProductF
               <input
                 type="number"
                 value={formData.stock}
-                onChange={e => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) }))}
+                onChange={handleStockChange}
                 className="w-full bg-black/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-neon-yellow"
                 min="0"
                 required

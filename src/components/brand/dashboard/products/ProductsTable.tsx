@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Button from '../../../ui/Button';
 import ProductForm from './ProductForm';
+import { getProducts, createProduct } from '../../../../services/productService';
 
 const currencies = [
   { symbol: <DollarSign className="w-4 h-4" />, code: 'USD' },
@@ -29,6 +30,23 @@ const currencies = [
 export default function ProductsTable() {
   const [showForm, setShowForm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts();
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error loading products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddProduct = () => {
     setSelectedProduct(null);
@@ -39,6 +57,21 @@ export default function ProductsTable() {
     setSelectedProduct(product);
     setShowForm(true);
   };
+
+  const handleSubmit = async (data: any) => {
+    try {
+      await createProduct(data);
+      await loadProducts();
+      setShowForm(false);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      // TODO: Show error message to user
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -66,25 +99,56 @@ export default function ProductsTable() {
             <TableHead>Category</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Size</TableHead>
-            <TableHead>Images</TableHead>
-            <TableHead>Brand</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>Stock</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {/* Table content will be added here */}
+          {products.map((product) => (
+            <TableRow key={product.id}>
+              <TableCell>
+                {product.product_images?.[0]?.image_url ? (
+                  <img 
+                    src={product.product_images[0].image_url} 
+                    alt={product.name}
+                    className="w-16 h-16 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-dark-grey rounded-lg" />
+                )}
+              </TableCell>
+              <TableCell>{product.name}</TableCell>
+              <TableCell>{product.category || '-'}</TableCell>
+              <TableCell>{product.description || '-'}</TableCell>
+              <TableCell>{product.size?.join(', ') || '-'}</TableCell>
+              <TableCell>{product.price} {product.currency}</TableCell>
+              <TableCell>{product.stock}</TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEditProduct(product)}
+                    className="p-2 hover:bg-dark-grey rounded-lg transition-colors"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => {/* TODO: Implement delete */}}
+                    className="p-2 hover:bg-dark-grey rounded-lg transition-colors text-red-500"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
 
       {showForm && (
         <ProductForm
           initialData={selectedProduct}
-          onSubmit={(data) => {
-            console.log('Form submitted:', data);
-            setShowForm(false);
-          }}
+          onSubmit={handleSubmit}
           onClose={() => setShowForm(false)}
         />
       )}
