@@ -6,15 +6,11 @@ export default function Hero() {
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
-      video.addEventListener('loadedmetadata', () => {
-        // Set the starting time to 2 seconds
-        video.currentTime = 2;
-      });
-
+    
       video.addEventListener('timeupdate', () => {
         // If the video reaches the end, reset to 2 seconds
         if (video.currentTime >= video.duration - 0.1) {
-          video.currentTime = 2;
+          video.currentTime = 0;
         }
       });
     }
@@ -30,7 +26,7 @@ export default function Hero() {
         className="absolute inset-0 w-full h-full object-cover"
       >
         <source
-          src="https://files.catbox.moe/wjjwwq.mp4"
+          src="https://msqgjcoxwffojqihlxaa.supabase.co/storage/v1/object/public/assets/20250106_1647_Elegant%20Fashion%20Display_simple_compose_01jgysccczeewrpmvyj6ss4cgz.mp4"
           type="video/mp4"
         />
       </video>
