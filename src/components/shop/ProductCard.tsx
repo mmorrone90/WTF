@@ -10,6 +10,8 @@ interface ProductCardProps {
   originalPrice?: number;
   rating?: number;
   partnerUrl?: string;
+  discount?: string;
+  sold?: string;
 }
 
 export default function ProductCard({
@@ -19,7 +21,9 @@ export default function ProductCard({
   price,
   originalPrice,
   rating = 5,
-  partnerUrl
+  partnerUrl,
+  discount,
+  sold
 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
 

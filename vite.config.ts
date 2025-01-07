@@ -7,4 +7,17 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'discover-feeds': [
+            './src/components/discover/RecommendationsFeed.tsx',
+            './src/components/discover/TrendingBrandsFeed.tsx',
+            './src/components/discover/JustAddedFeed.tsx'
+          ]
+        }
+      }
+    }
+  }
 });
