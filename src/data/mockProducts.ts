@@ -9,6 +9,9 @@ export interface MockProduct {
   rating: number;
   category: string;
   gender: 'men' | 'women' | 'unisex';
+  discount?: string;
+  sold?: string;
+  isNew?: boolean;
 }
 
 export const mockProducts: MockProduct[] = [
@@ -94,7 +97,10 @@ export const mockProducts: MockProduct[] = [
     partnerUrl: 'https://example.com/product-7',
     rating: 5,
     category: 'sneakers',
-    gender: 'unisex'
+    gender: 'unisex',
+    discount: '15%',
+    sold: '300',
+    isNew: true
   },
   {
     id: '8',
@@ -119,5 +125,81 @@ export const mockProducts: MockProduct[] = [
     rating: 5,
     category: 'sports',
     gender: 'women'
+  },
+  // Just Added Products
+  {
+    id: 'na1',
+    name: 'Tech Runner Sneakers Pro',
+    brand: 'NeoTokyo',
+    price: 199,
+    originalPrice: 249.99,
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff',
+    partnerUrl: 'https://example.com/product-na1',
+    rating: 5,
+    category: 'sneakers',
+    gender: 'unisex',
+    discount: '15%',
+    sold: '300',
+    isNew: true
+  },
+  {
+    id: 'na2',
+    name: 'Urban Combat Boots Elite',
+    brand: 'NeoTokyo',
+    price: 245,
+    originalPrice: 299.99,
+    image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa',
+    partnerUrl: 'https://example.com/product-na2',
+    rating: 4,
+    category: 'boots',
+    gender: 'unisex',
+    discount: '20%',
+    sold: '100',
+    isNew: true
+  },
+  {
+    id: 'na3',
+    name: 'Neon Pulse Watch',
+    brand: 'Digital Fit',
+    price: 199,
+    originalPrice: 249.99,
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30',
+    partnerUrl: 'https://example.com/product-na3',
+    rating: 5,
+    category: 'accessories',
+    gender: 'unisex',
+    discount: '25%',
+    sold: '400',
+    isNew: true
+  },
+  {
+    id: 'na4',
+    name: 'Cyber Deck Jacket',
+    brand: 'CyberStyle',
+    price: 180,
+    originalPrice: 229.99,
+    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5',
+    partnerUrl: 'https://example.com/product-na4',
+    rating: 4,
+    category: 'jacket',
+    gender: 'unisex',
+    discount: '30%',
+    sold: '350',
+    isNew: true
+  },
+  {
+    id: 'na5',
+    name: 'Matrix Shades',
+    brand: 'Digital Nomad',
+    price: 160,
+    originalPrice: 199.99,
+    image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083',
+    partnerUrl: 'https://example.com/product-na5',
+    rating: 5,
+    category: 'accessories',
+    gender: 'unisex',
+    discount: '10%',
+    sold: '500',
+    isNew: true
   }
 ];

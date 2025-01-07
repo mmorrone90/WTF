@@ -1,45 +1,15 @@
 import React from 'react';
-import ProductCard from './ProductCard';
+import ProductCard from '../ProductCard';
 import { motion } from 'framer-motion';
+import { mockProducts, MockProduct } from '../../data/mockProducts';
 
-const bestSellers = [
-  {
-    id: 'bs1',
-    name: 'Jeans Jacket',
-    image: 'https://images.unsplash.com/photo-1543076447-215ad9ba6923',
-    price: 34.00,
-    originalPrice: 53.00,
-    rating: 5,
-    partnerUrl: 'https://example.com/jeans-jacket'
-  },
-  {
-    id: 'bs2',
-    name: 'Full Sleeve Top',
-    image: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3',
-    price: 40.00,
-    originalPrice: 50.00,
-    rating: 5,
-    partnerUrl: 'https://example.com/full-sleeve-top'
-  },
-  {
-    id: 'bs3',
-    name: 'Winter Set',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f',
-    price: 35.00,
-    originalPrice: 39.00,
-    rating: 5,
-    partnerUrl: 'https://example.com/winter-set'
-  },
-  {
-    id: 'bs4',
-    name: 'Jeans Shirt',
-    image: 'https://images.unsplash.com/photo-1523380744952-b7e00e6e2ffa',
-    price: 35.00,
-    originalPrice: 39.00,
-    rating: 5,
-    partnerUrl: 'https://example.com/jeans-shirt'
-  }
-];
+// Select some products as best sellers
+const bestSellers: MockProduct[] = [
+  mockProducts.find(p => p.id === '1'), // Tech Wear Jacket
+  mockProducts.find(p => p.id === '3'), // Neon Dreams Hoodie
+  mockProducts.find(p => p.id === '7'), // Tech Runner Sneakers
+  mockProducts.find(p => p.id === '8')  // Digital Camo Jacket
+].filter((product): product is MockProduct => product !== undefined);
 
 export default function BestSellers() {
   return (
@@ -64,7 +34,17 @@ export default function BestSellers() {
               transition={{ delay: index * 0.1 }}
               viewport={{ once: true }}
             >
-              <ProductCard {...product} />
+              <ProductCard
+                id={product.id}
+                name={product.name}
+                brand={product.brand}
+                image={product.image}
+                price={product.price}
+                originalPrice={product.originalPrice}
+                rating={product.rating}
+                partnerUrl={product.partnerUrl}
+                variant="detailed"
+              />
             </motion.div>
           ))}
         </div>

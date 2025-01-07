@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { WishlistProvider } from './contexts/WishlistContext';
 
 // Layouts
 import BrandLayout from './components/brand/BrandLayout';
@@ -26,41 +27,43 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Brand Routes */}
-          <Route path="/brand">
-            <Route path="signup" element={<BrandSignUp />} />
-            <Route path="login" element={<BrandLogin />} />
-            <Route
-              path="dashboard/*"
-              element={
-                <ProtectedRoute>
-                  <BrandDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route index element={<Navigate to="/brand/signup" replace />} />
-          </Route>
-
-          {/* Main Routes */}
-          <Route path="/" element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="discover" element={<Discover />} />
-            <Route path="shop">
-              <Route index element={<Shop />} />
-              <Route path="all-products" element={<Shop />} />
-              <Route path="best-sellers" element={<Shop />} />
+      <WishlistProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Brand Routes */}
+            <Route path="/brand">
+              <Route path="signup" element={<BrandSignUp />} />
+              <Route path="login" element={<BrandLogin />} />
+              <Route
+                path="dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <BrandDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route index element={<Navigate to="/brand/signup" replace />} />
             </Route>
-            <Route path="about" element={<About />} />
-            <Route path="contact" element={<Contact />} />
-            <Route path="support" element={<Support />} />
-            <Route path="product/:id" element={<ProductDetails />} />
-            <Route path="signup" element={<SignUp />} />
-            <Route path="login" element={<Login />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+
+            {/* Main Routes */}
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Home />} />
+              <Route path="discover" element={<Discover />} />
+              <Route path="shop">
+                <Route index element={<Shop />} />
+                <Route path="all-products" element={<Shop />} />
+                <Route path="best-sellers" element={<Shop />} />
+              </Route>
+              <Route path="about" element={<About />} />
+              <Route path="contact" element={<Contact />} />
+              <Route path="support" element={<Support />} />
+              <Route path="product/:id" element={<ProductDetails />} />
+              <Route path="signup" element={<SignUp />} />
+              <Route path="login" element={<Login />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </WishlistProvider>
     </AuthProvider>
   );
 }

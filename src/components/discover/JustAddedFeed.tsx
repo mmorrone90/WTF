@@ -1,109 +1,16 @@
 import React, { useState } from 'react';
 import { PlusCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { mockProducts } from '../../data/mockProducts';
 
 export default function JustAddedFeed() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const navigate = useNavigate();
 
-  const newArrivals = [
-    {
-      id: 'na1',
-      name: 'Tech Runner Sneakers',
-      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff',
-      price: 199,
-      discount: '15%',
-      sold: '300'
-    },
-    {
-      id: 'na2',
-      name: 'Urban Combat Boots',
-      image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa',
-      price: 245,
-      discount: '20%',
-      sold: '100'
-    },
-    {
-      id: 'na3',
-      name: 'Neon Pulse Watch',
-      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30',
-      price: 199,
-      discount: '25%',
-      sold: '400'
-    },
-    {
-      id: 'na4',
-      name: 'Cyber Deck Jacket',
-      image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5',
-      price: 180,
-      discount: '30%',
-      sold: '350'
-    },
-    {
-      id: 'na5',
-      name: 'Matrix Shades',
-      image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083',
-      price: 160,
-      discount: '10%',
-      sold: '500'
-    },
-    {
-      id: 'na6',
-      name: 'Stealth Backpack',
-      image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62',
-      price: 299,
-      discount: '15%',
-      sold: '150'
-    },
-    {
-      id: 'na7',
-      name: 'Night Runner Hoodie',
-      image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7',
-      price: 175,
-      discount: '10%',
-      sold: '250'
-    },
-    {
-      id: 'na8',
-      name: 'Tech Cargo Pants',
-      image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80',
-      price: 220,
-      discount: '10%',
-      sold: '200'
-    },
-    {
-      id: 'na9',
-      name: 'Digital Camo Jacket',
-      image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea',
-      price: 289,
-      discount: '5%',
-      sold: '150'
-    },
-    {
-      id: 'na10',
-      name: 'Quantum Mesh Shirt',
-      image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990',
-      price: 99,
-      discount: '15%',
-      sold: '300'
-    },
-    {
-      id: 'na11',
-      name: 'Stealth Combat Boots',
-      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff',
-      price: 245,
-      discount: '20%',
-      sold: '100'
-    },
-    {
-      id: 'na12',
-      name: 'Cyber Visor',
-      image: 'https://images.unsplash.com/photo-1508296695146-257a814070b4',
-      price: 199,
-      discount: '25%',
-      sold: '400'
-    }
-  ];
+  // Filter just added products
+  const newArrivals = mockProducts.filter(product => product.isNew);
 
   const variants = {
     enter: (direction: number) => ({
@@ -148,6 +55,10 @@ export default function JustAddedFeed() {
     }
   };
 
+  const handleViewDetails = () => {
+    navigate(`/product/${newArrivals[currentIndex].id}`);
+  };
+
   return (
     <section className="relative">
       <h2 className="text-2xl font-bold flex items-center gap-2 mb-8">
@@ -176,7 +87,6 @@ export default function JustAddedFeed() {
                 whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.2 }}
               >
-                {/* Content remains the same */}
                 <div className="flex flex-col md:flex-row gap-8 items-center">
                   <motion.div 
                     className="w-full md:w-1/2"
@@ -213,6 +123,7 @@ export default function JustAddedFeed() {
                       {newArrivals[currentIndex].sold} people bought this item
                     </p>
                     <motion.button 
+                      onClick={handleViewDetails}
                       className="bg-neon-yellow text-black px-6 py-3 rounded-full hover:bg-neon-yellow/80 transition"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}

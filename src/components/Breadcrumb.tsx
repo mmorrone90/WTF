@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home, ChevronDown } from 'lucide-react';
+import { mockProducts } from '../data/mockProducts';
 
 interface SubRoute {
   name: string;
@@ -16,9 +17,6 @@ const SPECIAL_SECTIONS: SpecialSections = {
   shop: [
     { name: 'All Products', path: '/shop/all-products' },
     { name: 'Best Sellers', path: '/shop/best-sellers' },
-    // Easy to extend with more routes
-    // { name: 'New Arrivals', path: '/shop/new-arrivals' },
-    // { name: 'Collections', path: '/shop/collections' },
   ]
 };
 
@@ -33,14 +31,43 @@ export default function Breadcrumb() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const pathnames = location.pathname.split('/').filter(x => x);
 
-  // Create breadcrumb items with proper formatting
-  const breadcrumbItems: BreadcrumbItem[] = pathnames.map(path => ({
-    name: path.split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' '),
-    path: `/${path}`,
-    hasDropdown: SPECIAL_SECTIONS.hasOwnProperty(path.toLowerCase())
-  }));
+  // Handle product detail pages
+  const isProductPage = pathnames[0] === 'product' && pathnames[1];
+  let breadcrumbItems: BreadcrumbItem[] = [];
+
+  if (isProductPage) {
+    const productId = pathnames[1];
+    const product = mockProducts.find(p => p.id === productId);
+    
+    if (product) {
+      breadcrumbItems = [
+        {
+          name: 'Shop',
+          path: '/shop',
+          hasDropdown: true
+        },
+        {
+          name: product.category.charAt(0).toUpperCase() + product.category.slice(1),
+          path: `/shop?category=${product.category}`,
+          hasDropdown: false
+        },
+        {
+          name: product.name,
+          path: location.pathname,
+          hasDropdown: false
+        }
+      ];
+    }
+  } else {
+    // Create breadcrumb items with proper formatting for other pages
+    breadcrumbItems = pathnames.map(path => ({
+      name: path.split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' '),
+      path: `/${pathnames.slice(0, pathnames.indexOf(path) + 1).join('/')}`,
+      hasDropdown: SPECIAL_SECTIONS.hasOwnProperty(path.toLowerCase())
+    }));
+  }
 
   return (
     <nav>

@@ -1,9 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { mockProducts } from '../../data/mockProducts';
+import ProductCard from '../ProductCard';
 
 export default function RecommendationsFeed() {
+  const navigate = useNavigate();
+  
   // Simulated recommendations (in future, this will come from an API)
   const recommended = [
     mockProducts.find(p => p.id === '3'), // Neon Dreams Hoodie
@@ -43,7 +47,7 @@ export default function RecommendationsFeed() {
                   flex items-center gap-2 hover:bg-neon-yellow/80 transition"
                   onClick={() => {
                     // TODO: Implement navigation or modal for product details
-                    console.log(`View details for ${item.name}`);
+                    navigate(`/product/${item.id}`);
                   }}
                 >
                   <Eye className="w-5 h-5" />

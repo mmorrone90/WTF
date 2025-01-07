@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "@supabase/supabase-js": "^2.39.3",
+    "@types/canvas-confetti": "^1.9.0",
+    "canvas-confetti": "^1.9.3",
     "embla-carousel-react": "^8.5.1",
     "framer-motion": "^11.16.0",
     "lucide-react": "^0.344.0",

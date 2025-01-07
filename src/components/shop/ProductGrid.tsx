@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import ProductCard from './ProductCard';
+import ProductCard from '../ProductCard';
 import { Product } from '../../types/product';
 
 interface ProductGridProps {
@@ -35,9 +35,12 @@ export default function ProductGrid({ products, isLoading }: ProductGridProps) {
           <ProductCard
             id={product.id}
             name={product.name}
+            brand={product.brand}
             image={product.image}
             price={product.price}
-            originalPrice={product.price * 1.2}
+            originalPrice={product.originalPrice}
+            partnerUrl={product.partnerUrl}
+            variant="detailed"
           />
         </motion.div>
       ))}
