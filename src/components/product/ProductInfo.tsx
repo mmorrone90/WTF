@@ -53,20 +53,111 @@ export default function ProductInfo({
 
     setIsLoading(true);
 
-    // Trigger confetti animation and wait for it to finish
-    const duration = 2000; // Animation duration in milliseconds
+    // Create multiple waves of confetti
+    const duration = 3000; // Extended duration for more effects
+
+    // Helper function for firework effect
+    const fireConfettiFirework = (originX: number) => {
+      const colors = ['#D6FF00', '#FFFFFF', '#333333'];
+      confetti({
+        particleCount: 30,
+        angle: 90,
+        spread: 360,
+        origin: { x: originX, y: 0.6 },
+        colors: colors,
+        startVelocity: 30,
+        gravity: 0.8,
+        shapes: ['circle'],
+        ticks: 200,
+        scalar: 1.2,
+      });
+    };
+
+    // First wave - center burst
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 150,
+      spread: 100,
       origin: { y: 0.6 },
       colors: ['#D6FF00', '#FFFFFF', '#333333'],
       angle: 90,
       startVelocity: 45,
-      gravity: 1.2,
-      ticks: 200
+      gravity: 1,
+      ticks: 300
     });
 
-    // Wait for animation to finish before opening URL
+    // Second wave - from the sides
+    setTimeout(() => {
+      // Left side
+      confetti({
+        particleCount: 80,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.65 },
+        colors: ['#D6FF00', '#FFFFFF'],
+      });
+      // Right side
+      confetti({
+        particleCount: 80,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.65 },
+        colors: ['#D6FF00', '#FFFFFF'],
+      });
+    }, 500);
+
+    // Third wave - fireworks effect
+    setTimeout(() => {
+      fireConfettiFirework(0.3);
+      setTimeout(() => fireConfettiFirework(0.7), 200);
+    }, 1000);
+
+    // Fourth wave - rain effect
+    setTimeout(() => {
+      confetti({
+        particleCount: 120,
+        spread: 120,
+        origin: { y: -0.1 },
+        gravity: 1.5,
+        scalar: 1.2,
+        drift: 0,
+        ticks: 300,
+        colors: ['#D6FF00', '#FFFFFF'],
+      });
+    }, 1500);
+
+    // Fifth wave - final burst
+    setTimeout(() => {
+      // Center burst
+      confetti({
+        particleCount: 200,
+        spread: 150,
+        origin: { y: 0.6 },
+        colors: ['#D6FF00', '#FFFFFF', '#333333'],
+        ticks: 200,
+        gravity: 1.2,
+        scalar: 1.3,
+        startVelocity: 35,
+      });
+      // Quick side bursts
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 80,
+          origin: { x: 0, y: 0.65 },
+          colors: ['#D6FF00', '#FFFFFF'],
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 80,
+          origin: { x: 1, y: 0.65 },
+          colors: ['#D6FF00', '#FFFFFF'],
+        });
+      }, 100);
+    }, 2000);
+
+    // Wait for all animations to finish before opening URL
     setTimeout(() => {
       setIsLoading(false);
       window.open(partnerUrl, '_blank');
