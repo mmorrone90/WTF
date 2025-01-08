@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, ImageIcon, Tag } from 'lucide-react';
 import Card from './ui/Card';
+import Button from './ui/Button';
 
 interface ProductCardProps {
   id: string;
@@ -166,16 +167,13 @@ export default function ProductCard({
 
         {/* Buy Now Button */}
         {partnerUrl && (
-          <button
-            onClick={handleBuyNow}
-            className="w-full flex items-center justify-center gap-2 
-                     bg-dark-grey hover:bg-dark-grey/80 
-                     text-white font-bold px-6 py-3 rounded-lg
-                     transition-colors"
+          <Button 
+            onClick={handleBuyNow} 
+            className="w-full flex items-center justify-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Buy it now
-          </button>
+          </Button>
         )}
 
         {/* Rating */}

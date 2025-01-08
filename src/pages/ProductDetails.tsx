@@ -50,9 +50,9 @@ export default function ProductDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pt-20 pb-section">
-        <div className="max-w-container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+      <div className="min-h-screen pt-16 sm:pt-20 pb-section">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             <div className="aspect-square bg-dark-grey rounded-xl animate-pulse" />
             <div className="space-y-4">
               <div className="h-8 bg-dark-grey rounded w-3/4 animate-pulse" />
@@ -67,8 +67,8 @@ export default function ProductDetails() {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen pt-20 pb-section">
-        <div className="max-w-container mx-auto px-6 text-center">
+      <div className="min-h-screen pt-16 sm:pt-20 pb-section">
+        <div className="max-w-container mx-auto px-4 sm:px-6 text-center">
           <h1 className="text-2xl font-bold">
             {error ? error.message : 'Product not found'}
           </h1>
@@ -81,37 +81,41 @@ export default function ProductDetails() {
   const images = product.product_images?.map(img => img.image_url) || [product.image];
 
   return (
-    <div className="min-h-screen pt-20 pb-section">
-      <div className="max-w-container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+    <div className="min-h-screen pt-16 sm:pt-20 pb-section">
+      <div className="max-w-container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
           {/* Left: Image Carousel */}
-          <div className="sticky top-24">
+          <div className="md:sticky md:top-24">
             <ProductImageCarousel images={images} />
           </div>
 
           {/* Right: Product Info */}
-          <ProductInfo
-            id={product.id}
-            name={product.name}
-            brand={product.brand}
-            price={product.price}
-            currency={product.currency}
-            originalPrice={product.originalPrice}
-            description={product.description || `Experience the future of fashion with this ${product.brand} ${product.name.toLowerCase()}. Perfect for both urban exploration and digital frontiers.`}
-            material={product.metadata?.material || "Premium blend of sustainable materials"}
-            partnerUrl={product.partnerUrl}
-            deliveryDate="5-7 business days"
-            size={product.size}
-            stock={product.stock}
-          />
+          <div className="space-y-8">
+            <ProductInfo
+              id={product.id}
+              name={product.name}
+              brand={product.brand}
+              price={product.price}
+              currency={product.currency}
+              originalPrice={product.originalPrice}
+              description={product.description || `Experience the future of fashion with this ${product.brand} ${product.name.toLowerCase()}. Perfect for both urban exploration and digital frontiers.`}
+              material={product.metadata?.material || "Premium blend of sustainable materials"}
+              partnerUrl={product.partnerUrl}
+              deliveryDate="5-7 business days"
+              size={product.size}
+              stock={product.stock}
+            />
+          </div>
         </div>
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <RelatedProducts
-            products={relatedProducts}
-            currentProductId={product.id}
-          />
+          <div className="mt-16 sm:mt-24">
+            <RelatedProducts
+              products={relatedProducts}
+              currentProductId={product.id}
+            />
+          </div>
         )}
       </div>
     </div>

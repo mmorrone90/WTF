@@ -5,11 +5,13 @@ import HeroGallery from '../components/shop/HeroGallery';
 import BestSellers from '../components/shop/BestSellers';
 import { useProducts } from '../hooks/useProducts';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Filter } from 'lucide-react';
 
 export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
   const [activeSection, setActiveSection] = useState('hero');
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -124,7 +126,7 @@ export default function Shop() {
       <div 
         ref={heroRef} 
         data-section="hero" 
-        className={`h-[calc(75vh-30px)] transition-opacity duration-500 ${
+        className={`relative z-10 h-[calc(75vh-30px)] transition-opacity duration-500 ${
           activeSection === 'hero' ? 'opacity-100' : 'opacity-90'
         }`}
       >
@@ -135,19 +137,55 @@ export default function Shop() {
       <section 
         ref={allProductsRef} 
         data-section="all-products" 
-        className={`relative z-10 -mt-32 max-w-container mx-auto transition-opacity duration-500 ${
+        className={`relative z-20 -mt-32 max-w-container mx-auto transition-opacity duration-500 ${
           activeSection === 'all-products' ? 'opacity-100' : 'opacity-90'
         }`}
       >
         {/* Blurred Background Overlay */}
-        <div className="absolute -top-32 -left-[100vw] -right-[100vw] h-[400px] bg-gradient-to-b from-transparent via-black/100 to-black backdrop-blur-xl" />
+        <div className="absolute -top-32 -left-[100vw] -right-[100vw] h-[400px] bg-gradient-to-b from-transparent via-black/100 to-black backdrop-blur-xl z-0" />
         
-        <div className="relative px-6">
-          <h1 className="text-5xl font-bold mb-16 pt-8">ALL PRODUCTS</h1>
+        <div className="relative px-4 sm:px-6 z-30">
+          <div className="flex items-center justify-between mb-8 pt-8">
+            <h1 className="text-3xl sm:text-5xl font-bold">ALL PRODUCTS</h1>
+            <button
+              onClick={() => setIsMobileFiltersOpen(true)}
+              className="lg:hidden px-4 py-2 text-sm font-medium text-neon-yellow border border-neon-yellow rounded-lg hover:bg-neon-yellow/10 z-40"
+            >
+              Filters
+            </button>
+          </div>
           
-          <div className="flex flex-col lg:flex-row gap-12">
-            {/* Sidebar */}
-            <div className="lg:w-64 flex-shrink-0">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Mobile Filter Sidebar */}
+            <div 
+              className={`
+                fixed inset-0 z-[100] lg:hidden bg-black/95 backdrop-blur-md transform transition-transform duration-300 overflow-y-auto
+                ${isMobileFiltersOpen ? 'translate-x-0' : 'translate-x-full'}
+              `}
+            >
+              <div className="min-h-screen flex flex-col">
+                <div className="sticky top-0 bg-black/95 z-50 flex items-center justify-between p-4 border-b border-white/10">
+                  <h2 className="text-xl font-bold">Filters</h2>
+                  <button
+                    onClick={() => setIsMobileFiltersOpen(false)}
+                    className="p-2 text-text-grey hover:text-white z-50"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  <FilterSidebar
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={handleCategoryChange}
+                    selectedGender={selectedGender}
+                    onGenderChange={handleGenderChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:block lg:w-64 flex-shrink-0 z-30">
               <h2 className="text-xl font-bold mb-6">Filter by category</h2>
               <FilterSidebar
                 selectedCategory={selectedCategory}
@@ -158,7 +196,7 @@ export default function Shop() {
             </div>
 
             {/* Product Grid */}
-            <div className="flex-1">
+            <div className="flex-1 z-30">
               <ProductGrid 
                 products={products}
                 isLoading={isLoading}

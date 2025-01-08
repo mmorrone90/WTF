@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { motion } from 'framer-motion';
 import FeaturedCarousel from '../components/discover/FeaturedCarousel';
 import FilterPanel from '../components/discover/FilterPanel';
@@ -14,18 +14,38 @@ const LoadingSection = () => (
 );
 
 export default function Discover() {
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedPrice, setSelectedPrice] = useState('');
+  const [selectedBrand, setSelectedBrand] = useState('');
+
+  const handleFilterChange = (type: string, value: string) => {
+    switch (type) {
+      case 'category':
+        setSelectedCategory(value === selectedCategory ? '' : value);
+        break;
+      case 'price':
+        setSelectedPrice(value === selectedPrice ? '' : value);
+        break;
+      case 'brand':
+        setSelectedBrand(value === selectedBrand ? '' : value);
+        break;
+    }
+    setIsMobileFiltersOpen(false);
+  };
+
   return (
     <div className="relative min-h-screen">
       {/* Static Header / Hero Section - Always visible */}
-      <header className="relative mb-12">
+      <header className="relative mb-8 sm:mb-12">
         <FeaturedCarousel />
       </header>
 
       {/* Main Content Section */}
-      <main className="max-w-container mx-auto px-6">
+      <main className="max-w-container mx-auto px-4 sm:px-6">
         <div className="flex flex-col-reverse lg:flex-row gap-8">
           {/* Main Feed Column */}
-          <div className="lg:w-3/4 space-y-16">
+          <div className="lg:w-3/4 space-y-12 sm:space-y-16">
             {/* Wrap each feed in Suspense with loading fallback */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -59,9 +79,52 @@ export default function Discover() {
             </motion.section>
           </div>
 
-          {/* Sidebar - Filter Panel */}
-          <div className="lg:w-1/4 lg:sticky lg:top-4 lg:h-fit">
-            <FilterPanel />
+          {/* Mobile Filter Button */}
+          <div className="lg:hidden sticky top-0 z-30 -mx-4 px-4 py-3 bg-black/80 backdrop-blur-lg border-b border-white/10">
+            <button
+              onClick={() => setIsMobileFiltersOpen(true)}
+              className="w-full px-4 py-2 text-sm font-medium text-neon-yellow border border-neon-yellow rounded-lg hover:bg-neon-yellow/10"
+            >
+              Filters & Categories
+            </button>
+          </div>
+
+          {/* Mobile Filter Panel */}
+          <div 
+            className={`
+              fixed inset-0 z-50 lg:hidden bg-black transform transition-transform duration-300
+              ${isMobileFiltersOpen ? 'translate-x-0' : 'translate-x-full'}
+            `}
+          >
+            <div className="h-full flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <h2 className="text-xl font-bold">Filters & Categories</h2>
+                <button
+                  onClick={() => setIsMobileFiltersOpen(false)}
+                  className="p-2 text-text-grey hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4">
+                <FilterPanel 
+                  selectedCategory={selectedCategory}
+                  selectedPrice={selectedPrice}
+                  selectedBrand={selectedBrand}
+                  onFilterChange={handleFilterChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Sidebar - Filter Panel */}
+          <div className="hidden lg:block lg:w-1/4 lg:sticky lg:top-4 lg:h-fit">
+            <FilterPanel 
+              selectedCategory={selectedCategory}
+              selectedPrice={selectedPrice}
+              selectedBrand={selectedBrand}
+              onFilterChange={handleFilterChange}
+            />
           </div>
         </div>
       </main>
