@@ -1,43 +1,64 @@
-import { supabase } from '../lib/supabase';
+import { mockDb } from './mockDb';
+import { Product as DbProduct, ProductImage, Partner } from '../types/database';
+import { Product } from '../types/product';
 
 interface ProductData {
   title: string;
   category: string;
   description: string;
-  size: string[];
+  size: string;
   price: number;
   currency: string;
-  metadata: Record<string, string>;
-  tags: string[];
+  metadata?: Record<string, any>;
+  tags?: string;
   stock: number;
+}
+
+// Transform database product to UI product
+function transformProduct(
+  dbProduct: DbProduct & { 
+    product_images?: ProductImage[],
+    partners?: Partner
+  }
+): Product {
+  // Get primary image or first available image
+  const primaryImage = dbProduct.product_images?.find(img => img.is_primary);
+  const firstImage = dbProduct.product_images?.[0];
+  
+  return {
+    ...dbProduct,
+    brand: dbProduct.partners?.business_name || '',
+    image: primaryImage?.image_url || firstImage?.image_url || '',
+    partnerUrl: dbProduct.partners?.website_url,
+    // Keep other UI specific fields
+    rating: 5, // Default rating
+    currency: dbProduct.currency || 'USD',
+    product_images: dbProduct.product_images
+  };
 }
 
 export async function createProduct(data: ProductData) {
   try {
-    // Get the current user's ID
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw userError;
-    if (!user) throw new Error('Not authenticated');
-
-    // Create the product with partner_id
-    const { data: product, error: productError } = await supabase
+    const { data: product, error: productError } = await mockDb
       .from('products')
-      .insert({
-        name: data.title,
-        description: data.description,
-        size: data.size,
-        price: data.price,
-        currency: data.currency,
-        metadata: data.metadata,
-        tags: data.tags,
-        stock: data.stock,
-        partner_id: user.id // Add partner_id
-      })
-      .select()
+      .select(`
+        *,
+        product_images (
+          id,
+          image_url,
+          is_primary
+        ),
+        partners (
+          id,
+          business_name,
+          website_url
+        )
+      `)
       .single();
 
     if (productError) throw productError;
-    return product;
+    if (!product) throw new Error('Failed to create product');
+    return transformProduct(product);
   } catch (error) {
     console.error('Error creating product:', error);
     throw error;
@@ -45,31 +66,66 @@ export async function createProduct(data: ProductData) {
 }
 
 export async function getProducts() {
-  // Get the current user's ID
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError) throw userError;
-  if (!user) throw new Error('Not authenticated');
+  try {
+    const { data, error } = await mockDb
+      .from('products')
+      .select(`
+        *,
+        product_images (
+          id,
+          image_url,
+          is_primary
+        ),
+        partners (
+          id,
+          business_name,
+          website_url
+        )
+      `)
+      .order('created_at');
 
-  const { data, error } = await supabase
-    .from('products')
-    .select(`
-      *,
-      product_images (
-        id,
-        image_url,
-        is_primary
-      )
-    `)
-    .eq('partner_id', user.id) // Filter by partner_id
-    .order('created_at', { ascending: false });
+    if (error) throw error;
+    if (!data) return [];
+    
+    // Transform database products to UI products
+    return data.map(transformProduct);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    throw error;
+  }
+}
 
-  if (error) throw error;
-  return data;
+export async function getProduct(id: string) {
+  try {
+    const { data, error } = await mockDb
+      .from('products')
+      .select(`
+        *,
+        product_images (
+          id,
+          image_url,
+          is_primary
+        ),
+        partners (
+          id,
+          business_name,
+          website_url
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Product not found');
+    
+    return transformProduct(data);
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    throw error;
+  }
 }
 
 // For now, we'll simulate the wishlist functionality with local storage
-// Later, this will be replaced with actual API calls to Supabase
-
 export async function toggleWishlist(userId: string, productId: string): Promise<boolean> {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 300));

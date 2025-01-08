@@ -1,17 +1,39 @@
 import React from 'react';
 import ProductCard from '../ProductCard';
 import { motion } from 'framer-motion';
-import { mockProducts, MockProduct } from '../../data/mockProducts';
-
-// Select some products as best sellers
-const bestSellers: MockProduct[] = [
-  mockProducts.find(p => p.id === '1'), // Tech Wear Jacket
-  mockProducts.find(p => p.id === '3'), // Neon Dreams Hoodie
-  mockProducts.find(p => p.id === '7'), // Tech Runner Sneakers
-  mockProducts.find(p => p.id === '8')  // Digital Camo Jacket
-].filter((product): product is MockProduct => product !== undefined);
+import { useProducts } from '../../hooks/useProducts';
+import { Loader2 } from 'lucide-react';
 
 export default function BestSellers() {
+  const { products, isLoading, error } = useProducts();
+
+  // Get the first 4 products as best sellers (we can add a proper flag later)
+  const bestSellers = products.slice(0, 4);
+
+  if (isLoading) {
+    return (
+      <section className="py-20 bg-dark-grey/20">
+        <div className="max-w-container mx-auto px-6">
+          <div className="flex items-center justify-center h-[400px]">
+            <Loader2 className="w-8 h-8 animate-spin text-neon-yellow" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || bestSellers.length === 0) {
+    return (
+      <section className="py-20 bg-dark-grey/20">
+        <div className="max-w-container mx-auto px-6">
+          <div className="flex items-center justify-center h-[400px] text-text-grey">
+            No products available
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-20 bg-dark-grey/20">
       <div className="max-w-container mx-auto px-6">
@@ -40,6 +62,7 @@ export default function BestSellers() {
                 brand={product.brand}
                 image={product.image}
                 price={product.price}
+                currency={product.currency}
                 originalPrice={product.originalPrice}
                 rating={product.rating}
                 partnerUrl={product.partnerUrl}

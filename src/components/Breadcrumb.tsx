@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, Home, ChevronDown } from 'lucide-react';
-import { mockProducts } from '../data/mockProducts';
+import { ChevronRight, Home, ChevronDown, Loader2 } from 'lucide-react';
+import { getProduct } from '../services/productService';
+import { Product } from '../types/product';
 
 interface SubRoute {
   name: string;
@@ -29,17 +30,32 @@ interface BreadcrumbItem {
 export default function Breadcrumb() {
   const location = useLocation();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const pathnames = location.pathname.split('/').filter(x => x);
+
+  // Load product data if on a product page
+  useEffect(() => {
+    const isProductPage = pathnames[0] === 'product' && pathnames[1];
+    if (!isProductPage) {
+      setProduct(null);
+      return;
+    }
+
+    getProduct(pathnames[1])
+      .then(productData => setProduct(productData))
+      .catch(err => console.error('Error loading product:', err));
+  }, [pathnames]);
 
   // Handle product detail pages
   const isProductPage = pathnames[0] === 'product' && pathnames[1];
   let breadcrumbItems: BreadcrumbItem[] = [];
 
   if (isProductPage) {
-    const productId = pathnames[1];
-    const product = mockProducts.find(p => p.id === productId);
-    
     if (product) {
+      // Get category from tags
+      const categories = product.tags?.split(',').map(tag => tag.trim()) || [];
+      const mainCategory = categories[0] || 'product';
+
       breadcrumbItems = [
         {
           name: 'Shop',
@@ -47,8 +63,8 @@ export default function Breadcrumb() {
           hasDropdown: true
         },
         {
-          name: product.category.charAt(0).toUpperCase() + product.category.slice(1),
-          path: `/shop?category=${product.category}`,
+          name: mainCategory.charAt(0).toUpperCase() + mainCategory.slice(1),
+          path: `/shop?category=${mainCategory}`,
           hasDropdown: false
         },
         {
@@ -57,16 +73,32 @@ export default function Breadcrumb() {
           hasDropdown: false
         }
       ];
+    } else {
+      breadcrumbItems = [
+        {
+          name: 'Shop',
+          path: '/shop',
+          hasDropdown: true
+        },
+        {
+          name: 'Product',
+          path: location.pathname,
+          hasDropdown: false
+        }
+      ];
     }
-  } else {
+  } else if (pathnames.length > 0) {
     // Create breadcrumb items with proper formatting for other pages
-    breadcrumbItems = pathnames.map(path => ({
-      name: path.split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' '),
-      path: `/${pathnames.slice(0, pathnames.indexOf(path) + 1).join('/')}`,
-      hasDropdown: SPECIAL_SECTIONS.hasOwnProperty(path.toLowerCase())
-    }));
+    breadcrumbItems = pathnames.map(path => {
+      if (!path) return null;
+      return {
+        name: path.split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' '),
+        path: `/${pathnames.slice(0, pathnames.indexOf(path) + 1).join('/')}`,
+        hasDropdown: SPECIAL_SECTIONS.hasOwnProperty(path.toLowerCase())
+      };
+    }).filter(Boolean) as BreadcrumbItem[];
   }
 
   return (
@@ -110,7 +142,7 @@ export default function Breadcrumb() {
                 {/* Dropdown Menu */}
                 {item.hasDropdown && activeDropdown === item.path && (
                   <div className="absolute top-full left-0 mt-1 py-1 bg-black/95 backdrop-blur-sm border border-white/10 rounded-lg min-w-[120px] z-50">
-                    {SPECIAL_SECTIONS[item.path.slice(1).toLowerCase()].map((subItem: SubRoute) => (
+                    {SPECIAL_SECTIONS[item.path.slice(1).toLowerCase()]?.map((subItem: SubRoute) => (
                       <Link
                         key={subItem.path}
                         to={subItem.path}

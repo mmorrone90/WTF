@@ -1,16 +1,35 @@
 import React, { useState } from 'react';
-import { PlusCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { PlusCircle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { mockProducts } from '../../data/mockProducts';
+import { useProducts } from '../../hooks/useProducts';
 
 export default function JustAddedFeed() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const navigate = useNavigate();
+  const { products: allProducts, isLoading, error } = useProducts();
 
-  // Filter just added products
-  const newArrivals = mockProducts.filter(product => product.isNew);
+  // Get the 5 most recent products
+  const newArrivals = allProducts.slice(0, 5);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[500px]">
+        <Loader2 className="w-8 h-8 animate-spin text-neon-yellow" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || newArrivals.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[500px] text-text-grey">
+        No new products available
+      </div>
+    );
+  }
 
   const variants = {
     enter: (direction: number) => ({
@@ -59,6 +78,8 @@ export default function JustAddedFeed() {
     navigate(`/product/${newArrivals[currentIndex].id}`);
   };
 
+  const currentProduct = newArrivals[currentIndex];
+
   return (
     <section className="relative">
       <h2 className="text-2xl font-bold flex items-center gap-2 mb-8">
@@ -95,8 +116,8 @@ export default function JustAddedFeed() {
                     transition={{ delay: 0.2, duration: 0.3 }}
                   >
                     <img
-                      src={newArrivals[currentIndex].image}
-                      alt={newArrivals[currentIndex].name}
+                      src={currentProduct.image}
+                      alt={currentProduct.name}
                       className="w-full h-[300px] object-cover rounded-lg shadow-lg"
                     />
                   </motion.div>
@@ -107,21 +128,23 @@ export default function JustAddedFeed() {
                     transition={{ delay: 0.3, duration: 0.3 }}
                   >
                     <h3 className="text-3xl font-bold mb-4">
-                      {newArrivals[currentIndex].name}
+                      {currentProduct.name}
                     </h3>
                     <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
                       <span className="text-2xl text-neon-yellow">
-                        ${newArrivals[currentIndex].price}
+                        ${currentProduct.price} {currentProduct.currency}
                       </span>
-                      {newArrivals[currentIndex].discount && (
+                      {currentProduct.originalPrice && (
                         <span className="bg-neon-yellow text-black px-2 py-1 rounded-full text-sm">
-                          {newArrivals[currentIndex].discount} OFF
+                          {Math.round((1 - currentProduct.price / currentProduct.originalPrice) * 100)}% OFF
                         </span>
                       )}
                     </div>
-                    <p className="text-text-grey mb-6">
-                      {newArrivals[currentIndex].sold} people bought this item
-                    </p>
+                    {currentProduct.description && (
+                      <p className="text-text-grey mb-6">
+                        {currentProduct.description}
+                      </p>
+                    )}
                     <motion.button 
                       onClick={handleViewDetails}
                       className="bg-neon-yellow text-black px-6 py-3 rounded-full hover:bg-neon-yellow/80 transition"
@@ -138,43 +161,49 @@ export default function JustAddedFeed() {
         </AnimatePresence>
 
         {/* Navigation arrows - only visible on desktop */}
-        <motion.button
-          className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full 
-                     hover:bg-black/60 transition z-10 hidden md:block"
-          onClick={() => paginate(-1)}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ArrowLeft className="w-6 h-6 text-white" />
-        </motion.button>
-        <motion.button
-          className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full 
-                     hover:bg-black/60 transition z-10 hidden md:block"
-          onClick={() => paginate(1)}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <ArrowRight className="w-6 h-6 text-white" />
-        </motion.button>
+        {newArrivals.length > 1 && (
+          <>
+            <motion.button
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full 
+                       hover:bg-black/60 transition z-10 hidden md:block"
+              onClick={() => paginate(-1)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <ArrowLeft className="w-6 h-6 text-white" />
+            </motion.button>
+            <motion.button
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 p-3 rounded-full 
+                       hover:bg-black/60 transition z-10 hidden md:block"
+              onClick={() => paginate(1)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <ArrowRight className="w-6 h-6 text-white" />
+            </motion.button>
+          </>
+        )}
       </div>
 
       {/* Pagination dots */}
-      <div className="flex justify-center mt-8 gap-2">
-        {newArrivals.map((_, index) => (
-          <motion.button
-            key={index}
-            className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-              currentIndex === index ? 'bg-neon-yellow' : 'bg-dark-grey/50'
-            }`}
-            onClick={() => {
-              setDirection(index > currentIndex ? 1 : -1);
-              setCurrentIndex(index);
-            }}
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.8 }}
-          />
-        ))}
-      </div>
+      {newArrivals.length > 1 && (
+        <div className="flex justify-center mt-8 gap-2">
+          {newArrivals.map((_, index) => (
+            <motion.button
+              key={index}
+              className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                currentIndex === index ? 'bg-neon-yellow' : 'bg-dark-grey/50'
+              }`}
+              onClick={() => {
+                setDirection(index > currentIndex ? 1 : -1);
+                setCurrentIndex(index);
+              }}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.8 }}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

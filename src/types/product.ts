@@ -1,10 +1,11 @@
-export interface Product {
-  id: string;
-  name: string;
-  brand: string;
-  price: number;
-  image: string;
-  partnerUrl?: string;
-  rating?: number;
-  originalPrice?: number;
+import { Product as DbProduct, ProductImage } from './database';
+
+export interface Product extends Omit<DbProduct, 'partner_id' | 'category_id'> {
+  brand: string; // Derived from partner's business_name
+  image: string; // Primary image URL from product_images
+  partnerUrl?: string; // Derived from partner's website_url
+  rating?: number; // UI-specific field
+  originalPrice?: number; // UI-specific field for discounts
+  product_images?: ProductImage[]; // All product images
+  metadata?: Record<string, any>; // Product metadata
 }

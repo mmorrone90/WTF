@@ -10,11 +10,14 @@ interface ProductInfoProps {
   name: string;
   brand: string;
   price: number;
+  currency: string;
   originalPrice?: number;
   description: string;
   material?: string;
-  partnerUrl: string;
+  partnerUrl?: string;
   deliveryDate?: string;
+  size?: string;
+  stock?: number;
 }
 
 export default function ProductInfo({
@@ -22,11 +25,14 @@ export default function ProductInfo({
   name,
   brand,
   price,
+  currency = 'USD',
   originalPrice,
   description,
   material,
   partnerUrl,
-  deliveryDate
+  deliveryDate,
+  size,
+  stock
 }: ProductInfoProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { isInWishlist, toggleWishlistItem } = useWishlist();
@@ -188,11 +194,11 @@ export default function ProductInfo({
       {/* Price */}
       <div className="flex items-baseline gap-3">
         <span className="text-2xl font-bold text-neon-yellow">
-          ${price.toFixed(2)}
+          ${price.toFixed(2)} {currency}
         </span>
         {originalPrice && (
           <span className="text-lg text-text-grey line-through">
-            ${originalPrice.toFixed(2)}
+            ${originalPrice.toFixed(2)} {currency}
           </span>
         )}
       </div>
@@ -202,10 +208,26 @@ export default function ProductInfo({
 
       {/* Details */}
       <div className="space-y-4">
+        {size && (
+          <div>
+            <h3 className="font-bold mb-2">Size</h3>
+            <p className="text-text-grey">{size}</p>
+          </div>
+        )}
+        
         {material && (
           <div>
             <h3 className="font-bold mb-2">Material</h3>
             <p className="text-text-grey">{material}</p>
+          </div>
+        )}
+
+        {stock !== undefined && (
+          <div>
+            <h3 className="font-bold mb-2">Availability</h3>
+            <p className={`${stock > 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {stock > 0 ? `${stock} in stock` : 'Out of stock'}
+            </p>
           </div>
         )}
 
@@ -219,28 +241,38 @@ export default function ProductInfo({
 
       {/* CTA Button */}
       <div className="space-y-4">
-        <motion.button
-          onClick={handleBuyClick}
-          disabled={isLoading}
-          className="w-full py-4 bg-neon-yellow text-black font-bold rounded-lg
-                   hover:bg-neon-yellow/90 transition-colors text-lg
-                   disabled:opacity-75 disabled:cursor-not-allowed
-                   flex items-center justify-center gap-2"
-          whileHover={isLoading ? {} : { scale: 1.02 }}
-          whileTap={isLoading ? {} : { scale: 0.98 }}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Redirecting to {brand}...
-            </>
-          ) : (
-            `Shop Now on ${brand}`
-          )}
-        </motion.button>
-        <p className="text-sm text-text-grey text-center">
-          WTF may earn a commission from this link
-        </p>
+        {partnerUrl ? (
+          <motion.button
+            onClick={handleBuyClick}
+            disabled={isLoading || stock === 0}
+            className="w-full py-4 bg-neon-yellow text-black font-bold rounded-lg
+                     hover:bg-neon-yellow/90 transition-colors text-lg
+                     disabled:opacity-75 disabled:cursor-not-allowed
+                     flex items-center justify-center gap-2"
+            whileHover={isLoading ? {} : { scale: 1.02 }}
+            whileTap={isLoading ? {} : { scale: 0.98 }}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Redirecting to {brand}...
+              </>
+            ) : stock === 0 ? (
+              'Out of Stock'
+            ) : (
+              `Shop Now on ${brand}`
+            )}
+          </motion.button>
+        ) : (
+          <p className="text-center text-text-grey">
+            This product is currently unavailable
+          </p>
+        )}
+        {partnerUrl && (
+          <p className="text-sm text-text-grey text-center">
+            WTF may earn a commission from this link
+          </p>
+        )}
       </div>
     </div>
   );

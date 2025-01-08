@@ -9,6 +9,7 @@ interface ProductCardProps {
   brand?: string;
   image: string;
   price: number;
+  currency: string;
   originalPrice?: number;
   rating?: number;
   partnerUrl?: string;
@@ -23,6 +24,7 @@ export default function ProductCard({
   brand,
   image,
   price,
+  currency = 'USD',
   originalPrice,
   rating = 5,
   partnerUrl,
@@ -86,7 +88,7 @@ export default function ProductCard({
             <h3 className="font-bold mb-2">{name}</h3>
             <div className="flex items-center justify-between">
               <span className="text-neon-yellow font-bold">
-                ${price.toFixed(2)}
+                ${price.toFixed(2)} {currency}
               </span>
               {sold && (
                 <div className="flex items-center text-text-grey text-sm">
@@ -146,11 +148,11 @@ export default function ProductCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-neon-yellow font-bold">
-              ${price.toFixed(2)} USD
+              ${price.toFixed(2)} {currency}
             </span>
             {originalPrice && (
               <span className="text-text-grey line-through">
-                ${originalPrice.toFixed(2)} USD
+                ${originalPrice.toFixed(2)} {currency}
               </span>
             )}
           </div>

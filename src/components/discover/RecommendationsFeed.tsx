@@ -1,22 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { mockProducts } from '../../data/mockProducts';
+import { getProducts } from '../../services/productService';
+import { Product } from '../../types/product';
 import ProductCard from '../ProductCard';
 
 export default function RecommendationsFeed() {
   const navigate = useNavigate();
-  
-  // Simulated recommendations (in future, this will come from an API)
-  const recommended = [
-    mockProducts.find(p => p.id === '3'), // Neon Dreams Hoodie
-    mockProducts.find(p => p.id === '1'), // Tech Wear Jacket
-    mockProducts.find(p => p.id === '7'), // Tech Runner Sneakers
-    mockProducts.find(p => p.id === '4'), // Cyber Punk Dress
-    mockProducts.find(p => p.id === '6')  // Holographic Crop Top
-  ].filter(Boolean) as typeof mockProducts;
+  const [recommended, setRecommended] = useState<Product[]>([]);
 
+  useEffect(() => {
+    // Fetch products and select a few for recommendations
+    getProducts().then(products => {
+      // For now, just take the first 5 products as recommendations
+      // In a real app, this would use an algorithm to select relevant products
+      setRecommended(products.slice(0, 5));
+    });
+  }, []);
+
+  if (recommended.length === 0) {
+    return null;
+  }
+  
   return (
     <section className="relative">
       <h2 className="text-2xl font-bold flex items-center gap-2 mb-8">
@@ -45,10 +51,7 @@ export default function RecommendationsFeed() {
                 <button 
                   className="bg-neon-yellow text-black px-4 py-2 rounded-full 
                   flex items-center gap-2 hover:bg-neon-yellow/80 transition"
-                  onClick={() => {
-                    // TODO: Implement navigation or modal for product details
-                    navigate(`/product/${item.id}`);
-                  }}
+                  onClick={() => navigate(`/product/${item.id}`)}
                 >
                   <Eye className="w-5 h-5" />
                   View Details

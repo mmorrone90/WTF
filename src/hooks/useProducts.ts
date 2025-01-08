@@ -1,42 +1,45 @@
-import { useState, useEffect, useMemo } from 'react';
-import { mockProducts, MockProduct } from '../data/mockProducts';
+import { useState, useEffect } from 'react';
+import { Product } from '../types/product';
+import { getProducts } from '../services/productService';
 
-interface UseProductsProps {
+interface UseProductsOptions {
   category?: string;
   gender?: string;
 }
 
-export function useProducts({ category, gender }: UseProductsProps = {}) {
+export function useProducts({ category, gender }: UseProductsOptions = {}) {
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Simulate API delay
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    async function fetchProducts() {
+      try {
+        setIsLoading(true);
+        const allProducts = await getProducts();
+        
+        // Filter products based on tags
+        let filteredProducts = allProducts;
+        
+        if (category || gender) {
+          filteredProducts = allProducts.filter(product => {
+            const tags = product.tags?.toLowerCase().split(',') || [];
+            const matchesCategory = !category || tags.includes(category.toLowerCase());
+            const matchesGender = !gender || tags.includes(gender.toLowerCase());
+            return matchesCategory && matchesGender;
+          });
+        }
 
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Filter products based on category and gender
-  const filteredProducts = useMemo(() => {
-    let filtered = [...mockProducts];
-
-    if (category) {
-      filtered = filtered.filter(product => product.category === category);
+        setProducts(filteredProducts);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch products'));
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    if (gender) {
-      filtered = filtered.filter(product => 
-        product.gender === gender || product.gender === 'unisex'
-      );
-    }
-
-    return filtered;
+    fetchProducts();
   }, [category, gender]);
 
-  return {
-    products: filteredProducts,
-    isLoading
-  };
+  return { products, isLoading, error };
 }
