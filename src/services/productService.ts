@@ -66,3 +66,31 @@ export async function getProducts() {
   if (error) throw error;
   return data;
 }
+
+// For now, we'll simulate the wishlist functionality with local storage
+// Later, this will be replaced with actual API calls to Supabase
+
+export async function toggleWishlist(userId: string, productId: string): Promise<boolean> {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  // Get current wishlist from local storage
+  const key = `wishlist_${userId}`;
+  const currentWishlist = JSON.parse(localStorage.getItem(key) || '[]');
+
+  // Check if product is already in wishlist
+  const index = currentWishlist.indexOf(productId);
+  const isAdded = index === -1;
+
+  // Toggle product in wishlist
+  if (isAdded) {
+    currentWishlist.push(productId);
+  } else {
+    currentWishlist.splice(index, 1);
+  }
+
+  // Save updated wishlist
+  localStorage.setItem(key, JSON.stringify(currentWishlist));
+
+  return isAdded;
+}
