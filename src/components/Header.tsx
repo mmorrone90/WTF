@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Menu, X, LogOut, LogIn, UserPlus } from 'lucide-react';
+import { Search, Menu, X, LogOut, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
 import { signOut } from '../lib/auth';
@@ -11,7 +11,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user, profile } = useAuthContext();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,6 +38,8 @@ export default function Header() {
     { label: 'Contact', path: '/contact' },
     { label: 'Support', path: '/support' }
   ];
+
+  const isPartner = profile?.user_type === 'partner';
 
   return (
     <>
@@ -79,6 +81,16 @@ export default function Header() {
             <div className="hidden md:flex items-center space-x-4">
               {user ? (
                 <div className="flex items-center gap-4">
+                  {isPartner && (
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/brand/dashboard')}
+                      className="flex items-center gap-1.5 h-8 px-3 text-sm"
+                    >
+                      <LayoutDashboard className="w-3.5 h-3.5" />
+                      Dashboard
+                    </Button>
+                  )}
                   <span className="text-text-grey text-sm">
                     {user.email}
                   </span>
@@ -159,6 +171,19 @@ export default function Header() {
             <div className="space-y-4">
               {user ? (
                 <>
+                  {isPartner && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        navigate('/brand/dashboard');
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full flex items-center justify-center gap-2"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      Go to Dashboard
+                    </Button>
+                  )}
                   <div className="text-text-grey text-sm mb-4">
                     Logged in as: {user.email}
                   </div>
