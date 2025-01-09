@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, BarChart2, FileText, ShoppingBag, MessageSquare, Settings, HelpCircle, User } from 'lucide-react';
 
 const menuItems = [
-  { icon: Home, label: 'Home', path: '/brand/dashboard' },
+  { icon: Home, label: 'Home', path: '/' },
   { icon: BarChart2, label: 'Sales', path: '/brand/dashboard/sales' },
   { icon: FileText, label: 'Invoices', path: '/brand/dashboard/invoices' },
   { icon: ShoppingBag, label: 'Products', path: '/brand/dashboard/products' },

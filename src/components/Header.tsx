@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Menu, X, LogOut, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/AuthContext';
-import { signOut } from '../lib/auth';
+import { signOut } from '../services/auth/sessionService';
 import Logo from './Logo';
 import Breadcrumb from './Breadcrumb';
 import Button from './ui/Button';
@@ -24,10 +24,14 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
+      // Try to sign out from Supabase
       await signOut();
-      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
+    } finally {
+      // Always clear local storage and reload, even if server-side logout failed
+      localStorage.clear();
+      window.location.href = '/';
     }
   };
 

@@ -3,8 +3,11 @@ import { AuthenticationError } from './errors';
 
 export async function signOut() {
   try {
+    // Try server-side logout
     const { error } = await supabase.auth.signOut();
-    if (error) {
+    
+    // If there was an error but it's just a 403, we can ignore it
+    if (error && error.status !== 403) {
       throw new AuthenticationError(
         'Failed to sign out',
         'SIGNOUT_ERROR',
@@ -12,6 +15,10 @@ export async function signOut() {
       );
     }
   } catch (error) {
+    // If it's not a 403 error, throw it
+    if (error instanceof AuthenticationError && error.message.includes('403')) {
+      return;
+    }
     throw new AuthenticationError(
       'Failed to sign out',
       'SIGNOUT_ERROR',
