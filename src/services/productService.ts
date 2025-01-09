@@ -105,8 +105,9 @@ export async function createProduct(data: ProductData): Promise<Product> {
       throw new Error('User not authenticated');
     }
 
-    // Format the size array for PostgreSQL
+    // Format arrays for PostgreSQL
     const formattedSize = Array.isArray(data.size) ? `{${data.size.join(',')}}` : data.size;
+    const formattedTags = data.category ? `{${data.category}}` : '{}';
 
     // Create the product
     const { data: product, error: productError } = await supabase
@@ -119,7 +120,7 @@ export async function createProduct(data: ProductData): Promise<Product> {
         currency: data.currency || 'USD',
         stock: data.stock,
         metadata: data.metadata || {},
-        tags: data.tags?.join(',') || '',
+        tags: formattedTags,
         partner_id: session.session.user.id,
         created_at: new Date().toISOString()
       }])
@@ -178,8 +179,9 @@ export async function createProduct(data: ProductData): Promise<Product> {
 
 export async function updateProduct(id: string, data: ProductData): Promise<Product> {
   try {
-    // Format the size array for PostgreSQL
+    // Format arrays for PostgreSQL
     const formattedSize = Array.isArray(data.size) ? `{${data.size.join(',')}}` : data.size;
+    const formattedTags = Array.isArray(data.tags) ? `{${data.tags.join(',')}}` : data.tags;
 
     // Update the product
     const { data: product, error: productError } = await supabase
@@ -192,7 +194,7 @@ export async function updateProduct(id: string, data: ProductData): Promise<Prod
         currency: data.currency || 'USD',
         stock: data.stock,
         metadata: data.metadata || {},
-        tags: data.tags?.join(',') || ''
+        tags: formattedTags || ''
       })
       .eq('id', id)
       .select()

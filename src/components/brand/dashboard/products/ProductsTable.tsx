@@ -79,6 +79,7 @@ export default function ProductsTable() {
   const handleSubmit = async (formData: ProductFormData) => {
     try {
       setIsOperationLoading(true);
+      setError(null);
       let updatedProduct: Product;
 
       // Convert ProductFormData to ProductData

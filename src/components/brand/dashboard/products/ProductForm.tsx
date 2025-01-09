@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Upload, Trash2 } from 'lucide-react';
 import Button from '../../../ui/Button';
+import { supabase } from '../../../../lib/supabase';
 
 interface ProductFormData {
   title: string;
@@ -43,19 +44,76 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
   const [newMetadataKey, setNewMetadataKey] = useState('');
   const [newMetadataValue, setNewMetadataValue] = useState('');
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && formData.images.length + files.length <= 5) {
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
+    if (!files || files.length === 0) return;
+    
+    if (formData.images.length + files.length > 5) {
+      alert('Maximum 5 images allowed');
+      return;
+    }
+
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('product_images')
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('product_images')
+          .getPublicUrl(filePath);
+
+        return publicUrl;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, ...newImages]
+        images: [...prev.images, ...uploadedUrls]
       }));
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Failed to upload images');
+    }
+  };
+
+  const handleImageDelete = async (imageUrl: string, index: number) => {
+    try {
+      // Extract the file name from the URL
+      const fileName = imageUrl.split('/').pop();
+      if (!fileName) return;
+
+      // Delete from storage if it's a Supabase URL
+      if (imageUrl.includes('supabase')) {
+        const { error: deleteError } = await supabase.storage
+          .from('product_images')
+          .remove([fileName]);
+
+        if (deleteError) throw deleteError;
+      }
+
+      // Update form state
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      alert('Failed to delete image');
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return; // Prevent multiple submissions
+    
     // Ensure size is a string array with valid values
     const validatedFormData = {
       ...formData,
@@ -198,12 +256,7 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      setFormData(prev => ({
-                        ...prev,
-                        images: prev.images.filter((_, i) => i !== index)
-                      }));
-                    }}
+                    onClick={() => handleImageDelete(image, index)}
                     className="absolute top-1 right-1 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
