@@ -5,9 +5,10 @@ import { getProducts } from '../services/productService';
 interface UseProductsOptions {
   category?: string;
   gender?: string;
+  includeOutOfStock?: boolean;
 }
 
-export function useProducts({ category, gender }: UseProductsOptions = {}) {
+export function useProducts({ category, gender, includeOutOfStock = false }: UseProductsOptions = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -18,8 +19,12 @@ export function useProducts({ category, gender }: UseProductsOptions = {}) {
         setIsLoading(true);
         const allProducts = await getProducts();
         
-        // Filter products based on tags
+        // Filter products based on tags and stock
         let filteredProducts = allProducts;
+        
+        if (!includeOutOfStock) {
+          filteredProducts = filteredProducts.filter(product => product.stock > 0);
+        }
         
         if (category || gender) {
           filteredProducts = filteredProducts.filter(product => {
