@@ -1,4 +1,4 @@
-import { mockDb } from './mockDb';
+import { supabase } from '../lib/supabase';
 import { Product as DbProduct, ProductImage, Partner } from '../types/database';
 import { Product } from '../types/product';
 
@@ -39,8 +39,20 @@ function transformProduct(
 
 export async function createProduct(data: ProductData) {
   try {
-    const { data: product, error: productError } = await mockDb
+    // Create the product
+    const { data: product, error: productError } = await supabase
       .from('products')
+      .insert([{
+        name: data.title,
+        description: data.description,
+        size: data.size,
+        price: data.price,
+        currency: data.currency || 'USD',
+        stock: data.stock,
+        metadata: data.metadata || {},
+        tags: data.tags || '',
+        created_at: new Date().toISOString()
+      }])
       .select(`
         *,
         product_images (
@@ -58,6 +70,7 @@ export async function createProduct(data: ProductData) {
 
     if (productError) throw productError;
     if (!product) throw new Error('Failed to create product');
+
     return transformProduct(product);
   } catch (error) {
     console.error('Error creating product:', error);
@@ -67,7 +80,7 @@ export async function createProduct(data: ProductData) {
 
 export async function getProducts() {
   try {
-    const { data, error } = await mockDb
+    const { data, error } = await supabase
       .from('products')
       .select(`
         *,
@@ -97,7 +110,7 @@ export async function getProducts() {
 
 export async function getProduct(id: string) {
   try {
-    const { data, error } = await mockDb
+    const { data, error } = await supabase
       .from('products')
       .select(`
         *,

@@ -22,6 +22,8 @@ import Login from './pages/Login';
 import BrandSignUp from './pages/brand/SignUp';
 import BrandLogin from './pages/brand/auth/BrandLogin';
 import BrandDashboard from './pages/brand/dashboard/BrandDashboard';
+import Products from './pages/brand/dashboard/Products';
+import Dashboard from './pages/brand/Dashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 export default function App() {
@@ -35,13 +37,17 @@ export default function App() {
               <Route path="signup" element={<BrandSignUp />} />
               <Route path="login" element={<BrandLogin />} />
               <Route
-                path="dashboard/*"
+                path="dashboard"
                 element={
                   <ProtectedRoute>
                     <BrandDashboard />
                   </ProtectedRoute>
                 }
-              />
+              >
+                <Route index element={<Navigate to="overview" replace />} />
+                <Route path="overview" element={<Dashboard />} />
+                <Route path="products" element={<Products />} />
+              </Route>
               <Route index element={<Navigate to="/brand/signup" replace />} />
             </Route>
 
