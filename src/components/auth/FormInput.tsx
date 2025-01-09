@@ -33,7 +33,8 @@ export default function FormInput({
         value={value}
         onChange={onChange}
         className={`block w-full pl-10 ${rightElement ? 'pr-12' : 'pr-3'} py-3 
-                   bg-dark-grey rounded-lg text-white placeholder-text-grey
+                   bg-black text-white placeholder-gray-300
+                   border border-gray-700 
                    focus:outline-none focus:ring-2 focus:ring-neon-yellow
                    ${error ? 'ring-2 ring-red-500' : ''}`}
         placeholder={placeholder}
