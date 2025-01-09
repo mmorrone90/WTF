@@ -1,25 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --neon-yellow: #D7FF34;
-    --neon-cyan: #00FFCA;
-    --dark-grey: #1A1A1A;
-    --text-grey: #A1A1A1;
-  }
-
-  body {
-    @apply bg-black text-white font-space-grotesk;
-  }
-
-  /* Remove default padding-top */
-  main {
-    padding-top: 0;
+  html, body {
+    @apply font-space-grotesk bg-background text-white;
   }
 }
 
-/* Rest of your CSS remains the same */
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}

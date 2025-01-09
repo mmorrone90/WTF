@@ -8,4 +8,6 @@ export interface Product extends Omit<DbProduct, 'partner_id' | 'category_id'> {
   originalPrice?: number; // UI-specific field for discounts
   product_images?: ProductImage[]; // All product images
   metadata?: Record<string, any>; // Product metadata
+  discount?: string; // UI-specific field for discount display
+  sold?: string; // UI-specific field for number of items sold
 }
