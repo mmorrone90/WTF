@@ -1,18 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Filter } from 'lucide-react';
 import FilterSidebar from './FilterSidebar';
 import ProductGrid from './ProductGrid';
-import { useProducts } from '../../hooks/useProducts';
+import { Product } from '../../types/product';
+import { ProductGridSkeleton } from '../ui/Shimmer';
 
-export default function AllProducts() {
+interface AllProductsProps {
+  initialProducts: Product[];
+  isLoading: boolean;
+  error: Error | null;
+  hasMore: boolean;
+  onLoadMore: () => void;
+}
+
+export default function AllProducts({ 
+  initialProducts, 
+  isLoading, 
+  error,
+  hasMore,
+  onLoadMore 
+}: AllProductsProps) {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedGender, setSelectedGender] = useState('');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  const { products, isLoading } = useProducts({
-    category: selectedCategory || undefined,
-    gender: selectedGender || undefined
-  });
+  // Filter products locally instead of making API calls
+  const filteredProducts = useMemo(() => {
+    let result = initialProducts;
+
+    if (selectedCategory || selectedGender) {
+      result = result.filter(product => {
+        const tags = Array.isArray(product.tags) ? product.tags : product.tags?.toLowerCase().split(',') || [];
+        const matchesCategory = !selectedCategory || tags.includes(selectedCategory.toLowerCase());
+        const matchesGender = !selectedGender || tags.includes(selectedGender.toLowerCase());
+        return matchesCategory && matchesGender;
+      });
+    }
+
+    return result;
+  }, [initialProducts, selectedCategory, selectedGender]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category === selectedCategory ? '' : category);
@@ -76,10 +102,27 @@ export default function AllProducts() {
 
         {/* Product Grid */}
         <div className="flex-1">
-          <ProductGrid 
-            products={products}
-            isLoading={isLoading}
-          />
+          {error ? (
+            <div className="text-center text-text-grey py-12">{error.message}</div>
+          ) : (
+            <div className="space-y-8">
+              <ProductGrid 
+                products={filteredProducts}
+                isLoading={false}
+              />
+              {isLoading && <ProductGridSkeleton count={6} />}
+              {!isLoading && hasMore && (
+                <div className="text-center">
+                  <button
+                    onClick={onLoadMore}
+                    className="px-6 py-3 bg-dark-grey/50 text-white rounded-lg hover:bg-dark-grey/70 transition-colors"
+                  >
+                    Load More
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

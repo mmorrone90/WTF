@@ -19,17 +19,18 @@ interface ProductFormProps {
   initialData?: Partial<ProductFormData>;
   onSubmit: (data: ProductFormData) => void;
   onClose: () => void;
+  isLoading?: boolean;
 }
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY'];
 
-export default function ProductForm({ initialData, onSubmit, onClose }: ProductFormProps) {
+export default function ProductForm({ initialData, onSubmit, onClose, isLoading = false }: ProductFormProps) {
   const [formData, setFormData] = useState<ProductFormData>({
     title: initialData?.title || '',
     category: initialData?.category || '',
     description: initialData?.description || '',
-    size: initialData?.size || [],
+    size: Array.isArray(initialData?.size) ? initialData.size : initialData?.size ? [initialData.size] : [],
     images: initialData?.images || [],
     price: initialData?.price || 0,
     currency: initialData?.currency || 'USD',
@@ -55,7 +56,12 @@ export default function ProductForm({ initialData, onSubmit, onClose }: ProductF
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Ensure size is a string array with valid values
+    const validatedFormData = {
+      ...formData,
+      size: formData.size.filter(size => SIZES.includes(size))
+    };
+    onSubmit(validatedFormData);
   };
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -342,11 +348,18 @@ export default function ProductForm({ initialData, onSubmit, onClose }: ProductF
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit">
-              {initialData ? 'Update Product' : 'Add Product'}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {initialData ? 'Updating...' : 'Creating...'}
+                </>
+              ) : (
+                initialData ? 'Update Product' : 'Add Product'
+              )}
             </Button>
           </div>
         </form>

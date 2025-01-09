@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import type { MockProduct } from '../../data/mockProducts';
+import { Product } from '../../types/product';
 
 interface RelatedProductsProps {
-  products: MockProduct[];
+  products: Product[];
   currentProductId: string;
 }
 

@@ -1,25 +1,21 @@
 import React from 'react';
 import ProductCard from '../ProductCard';
 import { motion } from 'framer-motion';
-import { useProducts } from '../../hooks/useProducts';
-import { Loader2 } from 'lucide-react';
+import { Product } from '../../types/product';
+import { BestSellersSkeleton } from '../ui/Shimmer';
 
-export default function BestSellers() {
-  const { products, isLoading, error } = useProducts();
+interface BestSellersProps {
+  products: Product[];
+  isLoading: boolean;
+  error: Error | null;
+}
 
+export default function BestSellers({ products, isLoading, error }: BestSellersProps) {
   // Get the first 4 products as best sellers (we can add a proper flag later)
   const bestSellers = products.slice(0, 4);
 
   if (isLoading) {
-    return (
-      <section className="py-20 bg-dark-grey/20">
-        <div className="max-w-container mx-auto px-6">
-          <div className="flex items-center justify-center h-[400px]">
-            <Loader2 className="w-8 h-8 animate-spin text-neon-yellow" />
-          </div>
-        </div>
-      </section>
-    );
+    return <BestSellersSkeleton />;
   }
 
   if (error || bestSellers.length === 0) {
@@ -27,7 +23,7 @@ export default function BestSellers() {
       <section className="py-20 bg-dark-grey/20">
         <div className="max-w-container mx-auto px-6">
           <div className="flex items-center justify-center h-[400px] text-text-grey">
-            No products available
+            {error ? error.message : 'No products available'}
           </div>
         </div>
       </section>

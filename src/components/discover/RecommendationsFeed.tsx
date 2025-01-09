@@ -1,20 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getProducts } from '../../services/productService';
-import { Product } from '../../types/product';
+import { useProducts } from '../../hooks/useProducts';
 import { ParallaxScroll } from '../ui/parallax-scroll';
 
 export default function RecommendationsFeed() {
   const navigate = useNavigate();
-  const [recommended, setRecommended] = useState<Product[]>([]);
+  const { products, isLoading } = useProducts();
+  const recommended = products.slice(0, 9); // Ensure at least 9 products for parallax
 
-  useEffect(() => {
-    getProducts().then(products => {
-      setRecommended(products.slice(0, 9)); // Ensure at least 9 products for parallax
-    });
-  }, []);
-
-  if (recommended.length === 0) {
+  if (isLoading || recommended.length === 0) {
     return null;
   }
 

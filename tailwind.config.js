@@ -6,14 +6,17 @@ const {
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./src/**/*.{ts,tsx}"],
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
   darkMode: "class",
   theme: {
     extend: {
       colors: {
-        'neon-yellow': '#E6FB04',
         'background': '#000000',
-        'text-grey': '#888888',
+        'dark-grey': '#1A1A1A',
+        'text-grey': '#808080',
+        'neon-yellow': '#FAFF00',
       },
       fontFamily: {
         'sans': ['Space Grotesk', ...defaultTheme.fontFamily.sans],
@@ -22,6 +25,17 @@ module.exports = {
       maxWidth: {
         'container': '1440px',
       },
+      padding: {
+        'section': '80px',
+      },
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' }
+        }
+      },
+      animation: {
+        shimmer: 'shimmer 1.5s infinite'
+      }
     },
   },
   plugins: [

@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react';
 import { Product } from '../types/product';
 import { getProducts } from '../services/productService';
 
+// Cache object to store products with their filter keys
+const cache: {
+  [key: string]: {
+    data: Product[];
+    timestamp: number;
+  };
+} = {};
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 interface UseProductsOptions {
   category?: string;
   gender?: string;
@@ -13,10 +23,24 @@ export function useProducts({ category, gender, includeOutOfStock = false }: Use
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Create a cache key based on filter parameters
+  const cacheKey = JSON.stringify({ category, gender, includeOutOfStock });
+
   useEffect(() => {
     async function fetchProducts() {
       try {
         setIsLoading(true);
+        
+        // Check cache first
+        const now = Date.now();
+        const cached = cache[cacheKey];
+        
+        if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+          setProducts(cached.data);
+          setIsLoading(false);
+          return;
+        }
+
         const allProducts = await getProducts();
         
         // Filter products based on tags and stock
@@ -35,6 +59,12 @@ export function useProducts({ category, gender, includeOutOfStock = false }: Use
           });
         }
 
+        // Update cache
+        cache[cacheKey] = {
+          data: filteredProducts,
+          timestamp: now
+        };
+
         setProducts(filteredProducts);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch products'));
@@ -44,7 +74,7 @@ export function useProducts({ category, gender, includeOutOfStock = false }: Use
     }
 
     fetchProducts();
-  }, [category, gender, includeOutOfStock]);
+  }, [cacheKey]);
 
   return { products, isLoading, error };
 }
