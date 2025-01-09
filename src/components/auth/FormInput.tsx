@@ -34,8 +34,9 @@ export default function FormInput({
         onChange={onChange}
         className={`peer block w-full pl-10 ${rightElement ? 'pr-12' : 'pr-3'} py-3 
                    bg-background rounded-lg text-white placeholder-text-grey
-                   focus:outline-none focus:ring-2 focus:ring-neon-yellow
-                   ${error ? 'ring-2 ring-red-500' : ''}`}
+                   border border-text-grey
+                   focus:outline-none focus:ring-2 focus:ring-neon-yellow focus:border-transparent
+                   ${error ? 'ring-2 ring-red-500 border-transparent' : ''}`}
         placeholder={placeholder}
       />
       {rightElement}
