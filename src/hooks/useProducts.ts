@@ -22,8 +22,8 @@ export function useProducts({ category, gender }: UseProductsOptions = {}) {
         let filteredProducts = allProducts;
         
         if (category || gender) {
-          filteredProducts = allProducts.filter(product => {
-            const tags = product.tags?.toLowerCase().split(',') || [];
+          filteredProducts = filteredProducts.filter(product => {
+            const tags = Array.isArray(product.tags) ? product.tags : product.tags?.toLowerCase().split(',') || [];
             const matchesCategory = !category || tags.includes(category.toLowerCase());
             const matchesGender = !gender || tags.includes(gender.toLowerCase());
             return matchesCategory && matchesGender;
@@ -39,7 +39,7 @@ export function useProducts({ category, gender }: UseProductsOptions = {}) {
     }
 
     fetchProducts();
-  }, [category, gender]);
+  }, [category, gender, includeOutOfStock]);
 
   return { products, isLoading, error };
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, Home, ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronRight, Home, ChevronDown } from 'lucide-react';
 import { getProduct } from '../services/productService';
 import { Product } from '../types/product';
 
@@ -13,7 +13,6 @@ interface SpecialSections {
   [key: string]: SubRoute[];
 }
 
-// Define special sections with their subroutes
 const SPECIAL_SECTIONS: SpecialSections = {
   shop: [
     { name: 'All Products', path: '/shop/all-products' },
@@ -33,7 +32,6 @@ export default function Breadcrumb() {
   const [product, setProduct] = useState<Product | null>(null);
   const pathnames = location.pathname.split('/').filter(x => x);
 
-  // Load product data if on a product page
   useEffect(() => {
     const isProductPage = pathnames[0] === 'product' && pathnames[1];
     if (!isProductPage) {
@@ -42,63 +40,43 @@ export default function Breadcrumb() {
     }
 
     getProduct(pathnames[1])
-      .then(productData => setProduct(productData))
+      .then(setProduct)
       .catch(err => console.error('Error loading product:', err));
   }, [pathnames]);
 
-  // Handle product detail pages
   const isProductPage = pathnames[0] === 'product' && pathnames[1];
   let breadcrumbItems: BreadcrumbItem[] = [];
 
-  if (isProductPage) {
-    if (product) {
-      // Get category from tags
-      const categories = product.tags?.split(',').map(tag => tag.trim()) || [];
-      const mainCategory = categories[0] || 'product';
+  if (isProductPage && product) {
+    const mainCategory = Array.isArray(product.tags) && product.tags.length > 0 
+      ? product.tags[0] 
+      : 'product';
 
-      breadcrumbItems = [
-        {
-          name: 'Shop',
-          path: '/shop',
-          hasDropdown: true
-        },
-        {
-          name: mainCategory.charAt(0).toUpperCase() + mainCategory.slice(1),
-          path: `/shop?category=${mainCategory}`,
-          hasDropdown: false
-        },
-        {
-          name: product.name,
-          path: location.pathname,
-          hasDropdown: false
-        }
-      ];
-    } else {
-      breadcrumbItems = [
-        {
-          name: 'Shop',
-          path: '/shop',
-          hasDropdown: true
-        },
-        {
-          name: 'Product',
-          path: location.pathname,
-          hasDropdown: false
-        }
-      ];
-    }
+    breadcrumbItems = [
+      {
+        name: 'Shop',
+        path: '/shop',
+        hasDropdown: true
+      },
+      {
+        name: mainCategory.charAt(0).toUpperCase() + mainCategory.slice(1),
+        path: `/shop?category=${mainCategory}`,
+        hasDropdown: false
+      },
+      {
+        name: product.name,
+        path: location.pathname,
+        hasDropdown: false
+      }
+    ];
   } else if (pathnames.length > 0) {
-    // Create breadcrumb items with proper formatting for other pages
-    breadcrumbItems = pathnames.map(path => {
-      if (!path) return null;
-      return {
-        name: path.split('-')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' '),
-        path: `/${pathnames.slice(0, pathnames.indexOf(path) + 1).join('/')}`,
-        hasDropdown: SPECIAL_SECTIONS.hasOwnProperty(path.toLowerCase())
-      };
-    }).filter(Boolean) as BreadcrumbItem[];
+    breadcrumbItems = pathnames.map(path => ({
+      name: path.split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' '),
+      path: `/${pathnames.slice(0, pathnames.indexOf(path) + 1).join('/')}`,
+      hasDropdown: SPECIAL_SECTIONS.hasOwnProperty(path.toLowerCase())
+    }));
   }
 
   return (
@@ -139,7 +117,6 @@ export default function Breadcrumb() {
                   )}
                 </button>
                 
-                {/* Dropdown Menu */}
                 {item.hasDropdown && activeDropdown === item.path && (
                   <div className="absolute top-full left-0 mt-1 py-1 bg-black/95 backdrop-blur-sm border border-white/10 rounded-lg min-w-[120px] z-50">
                     {SPECIAL_SECTIONS[item.path.slice(1).toLowerCase()]?.map((subItem: SubRoute) => (

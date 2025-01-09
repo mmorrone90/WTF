@@ -21,19 +21,20 @@ export default function ProductDetails() {
         setIsLoading(true);
         setError(null);
         
-        // Fetch the product
         const productData = await getProduct(id);
         setProduct(productData);
         
-        // Get related products based on tags
         const allProducts = await getProducts();
-        const productTags = productData.tags?.toLowerCase().split(',') || [];
+        const productTags = Array.isArray(productData.tags) 
+          ? productData.tags.map(tag => tag.toLowerCase())
+          : [];
+
         const related = allProducts
-          .filter(p => {
-            if (p.id === id) return false;
-            const pTags = p.tags?.toLowerCase().split(',') || [];
-            return productTags.some(tag => pTags.includes(tag));
-          })
+          .filter(p => 
+            p.id !== id && 
+            Array.isArray(p.tags) &&
+            p.tags.some(tag => productTags.includes(tag.toLowerCase()))
+          )
           .slice(0, 4);
         
         setRelatedProducts(related);
@@ -77,19 +78,16 @@ export default function ProductDetails() {
     );
   }
 
-  // Get all product images
   const images = product.product_images?.map(img => img.image_url) || [product.image];
 
   return (
     <div className="min-h-screen pt-16 sm:pt-20 pb-section">
       <div className="max-w-container mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-          {/* Left: Image Carousel */}
           <div className="md:sticky md:top-24">
             <ProductImageCarousel images={images} />
           </div>
 
-          {/* Right: Product Info */}
           <div className="space-y-8">
             <ProductInfo
               id={product.id}
@@ -108,7 +106,6 @@ export default function ProductDetails() {
           </div>
         </div>
 
-        {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-16 sm:mt-24">
             <RelatedProducts

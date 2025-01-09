@@ -51,6 +51,7 @@ export async function createProduct(data: ProductData) {
         stock: data.stock,
         metadata: data.metadata || {},
         tags: data.tags || '',
+        partner_id: partner.id,
         created_at: new Date().toISOString()
       }])
       .select(`
@@ -66,12 +67,13 @@ export async function createProduct(data: ProductData) {
           website_url
         )
       `)
+      .eq('id', product.id)
       .single();
 
     if (productError) throw productError;
     if (!product) throw new Error('Failed to create product');
 
-    return transformProduct(product);
+    return transformProduct(completeProduct);
   } catch (error) {
     console.error('Error creating product:', error);
     throw error;
@@ -80,6 +82,7 @@ export async function createProduct(data: ProductData) {
 
 export async function getProducts() {
   try {
+    console.log('Fetching products from Supabase...');
     const { data, error } = await supabase
       .from('products')
       .select(`
@@ -97,14 +100,26 @@ export async function getProducts() {
       `)
       .order('created_at');
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+    
+    console.log('Received data from Supabase:', data);
     if (!data) return [];
     
     // Transform database products to UI products
-    return data.map(transformProduct);
+    const transformedProducts = data.map(product => transformProduct(product as DbProduct & { 
+      product_images?: ProductImage[],
+      partners?: Partner
+    }));
+    console.log('Transformed products:', transformedProducts);
+    
+    return transformedProducts;
   } catch (error) {
     console.error('Error fetching products:', error);
-    throw error;
+    // Return empty array instead of throwing error for public queries
+    return [];
   }
 }
 
