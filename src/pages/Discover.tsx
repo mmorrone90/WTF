@@ -1,133 +1,70 @@
-import React, { Suspense, lazy, useState } from 'react';
-import { motion } from 'framer-motion';
-import FeaturedCarousel from '../components/discover/FeaturedCarousel';
-import FilterPanel from '../components/discover/FilterPanel';
-
-// Lazy load components
-const RecommendationsFeed = lazy(() => import('../components/discover/RecommendationsFeed'));
-const TrendingBrandsFeed = lazy(() => import('../components/discover/TrendingBrandsFeed'));
-const JustAddedFeed = lazy(() => import('../components/discover/JustAddedFeed'));
-
-// Loading placeholder
-const LoadingSection = () => (
-  <div className="w-full h-[500px] bg-dark-grey/20 rounded-xl animate-pulse" />
-);
+import React from 'react';
+import { SparklesCore } from '../components/ui/sparkles';
+import { GlowingStarsBackgroundCard, GlowingStarsTitle, GlowingStarsDescription } from '../components/ui/glowing-stars';
 
 export default function Discover() {
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedPrice, setSelectedPrice] = useState('');
-  const [selectedBrand, setSelectedBrand] = useState('');
-
-  const handleFilterChange = (type: string, value: string) => {
-    switch (type) {
-      case 'category':
-        setSelectedCategory(value === selectedCategory ? '' : value);
-        break;
-      case 'price':
-        setSelectedPrice(value === selectedPrice ? '' : value);
-        break;
-      case 'brand':
-        setSelectedBrand(value === selectedBrand ? '' : value);
-        break;
-    }
-    setIsMobileFiltersOpen(false);
-  };
-
   return (
-    <div className="relative min-h-screen">
-      {/* Static Header / Hero Section - Always visible */}
-      <header className="relative mb-8 sm:mb-12">
-        <FeaturedCarousel />
-      </header>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background Sparkles */}
+      <div className="absolute inset-0 w-full h-full">
+        <SparklesCore
+          id="tsparticlesfullpage"
+          background="transparent"
+          minSize={0.6}
+          maxSize={1.4}
+          particleDensity={100}
+          className="w-full h-full"
+          particleColor="#E6FB04"
+          speed={1}
+        />
+      </div>
 
-      {/* Main Content Section */}
-      <main className="max-w-container mx-auto px-4 sm:px-6">
-        <div className="flex flex-col-reverse lg:flex-row gap-8">
-          {/* Main Feed Column */}
-          <div className="lg:w-3/4 space-y-12 sm:space-y-16">
-            {/* Wrap each feed in Suspense with loading fallback */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              <Suspense fallback={<LoadingSection />}>
-                <RecommendationsFeed />
-              </Suspense>
-            </motion.section>
-
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              <Suspense fallback={<LoadingSection />}>
-                <TrendingBrandsFeed />
-              </Suspense>
-            </motion.section>
-
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              className="mb-16"
-            >
-              <Suspense fallback={<LoadingSection />}>
-                <JustAddedFeed />
-              </Suspense>
-            </motion.section>
-          </div>
-
-          {/* Mobile Filter Button */}
-          <div className="lg:hidden sticky top-0 z-30 -mx-4 px-4 py-3 bg-black/80 backdrop-blur-lg border-b border-white/10">
-            <button
-              onClick={() => setIsMobileFiltersOpen(true)}
-              className="w-full px-4 py-2 text-sm font-medium text-neon-yellow border border-neon-yellow rounded-lg hover:bg-neon-yellow/10"
-            >
-              Filters & Categories
-            </button>
-          </div>
-
-          {/* Mobile Filter Panel */}
-          <div 
-            className={`
-              fixed inset-0 z-50 lg:hidden bg-black transform transition-transform duration-300
-              ${isMobileFiltersOpen ? 'translate-x-0' : 'translate-x-full'}
-            `}
-          >
-            <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <h2 className="text-xl font-bold">Filters & Categories</h2>
-                <button
-                  onClick={() => setIsMobileFiltersOpen(false)}
-                  className="p-2 text-text-grey hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4">
-                <FilterPanel 
-                  selectedCategory={selectedCategory}
-                  selectedPrice={selectedPrice}
-                  selectedBrand={selectedBrand}
-                  onFilterChange={handleFilterChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Desktop Sidebar - Filter Panel */}
-          <div className="hidden lg:block lg:w-1/4 lg:sticky lg:top-4 lg:h-fit">
-            <FilterPanel 
-              selectedCategory={selectedCategory}
-              selectedPrice={selectedPrice}
-              selectedBrand={selectedBrand}
-              onFilterChange={handleFilterChange}
-            />
-          </div>
+      {/* Main Content */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6 md:p-8">
+        {/* Coming Soon Text */}
+        <div className="text-center mb-20">
+          <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-neon-yellow to-white">
+            Something Epic<br />Is Coming
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            We're crafting a revolutionary way to discover your perfect style. Get ready for an AI-powered fashion journey like never before.
+          </p>
         </div>
-      </main>
+
+        {/* Feature Teasers */}
+        <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-20">
+          <GlowingStarsBackgroundCard className="p-6 md:p-8">
+            <GlowingStarsTitle className="mb-4">AI Style Analysis</GlowingStarsTitle>
+            <GlowingStarsDescription>
+              Our advanced AI will understand your unique style DNA and curate the perfect pieces for you
+            </GlowingStarsDescription>
+          </GlowingStarsBackgroundCard>
+          
+          <GlowingStarsBackgroundCard className="p-6 md:p-8">
+            <GlowingStarsTitle className="mb-4">Personalized Discovery</GlowingStarsTitle>
+            <GlowingStarsDescription>
+              Experience a shopping journey that adapts to your preferences in real-time
+            </GlowingStarsDescription>
+          </GlowingStarsBackgroundCard>
+          
+          <GlowingStarsBackgroundCard className="p-6 md:p-8">
+            <GlowingStarsTitle className="mb-4">Style Evolution</GlowingStarsTitle>
+            <GlowingStarsDescription>
+              Watch your style evolve as our AI learns and grows with you
+            </GlowingStarsDescription>
+          </GlowingStarsBackgroundCard>
+        </div>
+
+        {/* Early Access */}
+        <div className="text-center">
+          <button className="px-10 py-5 bg-neon-yellow text-black rounded-full font-bold hover:bg-opacity-90 transition-all text-lg mb-4">
+            Get Early Access
+          </button>
+          <p className="text-gray-400 text-lg">
+            Be among the first to experience the future of fashion discovery
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
