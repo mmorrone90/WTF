@@ -75,6 +75,16 @@ export default function Login() {
         <div className="text-center">
           <h2 className="text-4xl font-bold mb-2">Welcome Back</h2>
           <p className="text-text-grey">Log in to your account</p>
+          <p className="text-xs text-text-grey mt-1">
+            Are you a partner?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/brand/login')}
+              className="text-neon-yellow hover:text-neon-yellow/80 font-bold"
+            >
+              Please login here
+            </button>
+          </p>
         </div>
 
         <div className="space-y-4">
