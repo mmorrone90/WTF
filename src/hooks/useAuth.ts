@@ -50,52 +50,70 @@ export function useAuth() {
       }
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!mounted) return;
-
-      if (error) {
-        console.error('Session error:', error);
-        setState(prev => ({ ...prev, error, loading: false }));
-        return;
-      }
-
-      if (session?.user) {
-        setState(prev => ({ ...prev, user: session.user }));
-        loadUserProfile(session.user);
-      } else {
-        setState(prev => ({
-          ...prev,
-          user: null,
-          profile: null,
-          loading: false,
-          error: null
-        }));
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+    async function initializeAuth() {
+      try {
+        // Get initial session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
         if (!mounted) return;
+
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          setState(prev => ({ ...prev, error: sessionError, loading: false }));
+          return;
+        }
 
         if (session?.user) {
           setState(prev => ({ ...prev, user: session.user }));
-          loadUserProfile(session.user);
+          await loadUserProfile(session.user);
         } else {
-          setState({
+          setState(prev => ({
+            ...prev,
             user: null,
             profile: null,
             loading: false,
             error: null
-          });
+          }));
+        }
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (_event, session) => {
+            if (!mounted) return;
+
+            if (session?.user) {
+              setState(prev => ({ ...prev, user: session.user }));
+              await loadUserProfile(session.user);
+            } else {
+              setState({
+                user: null,
+                profile: null,
+                loading: false,
+                error: null
+              });
+            }
+          }
+        );
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        if (mounted) {
+          setState(prev => ({
+            ...prev,
+            loading: false,
+            error: error as Error
+          }));
         }
       }
-    );
+    }
+
+    initializeAuth();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
