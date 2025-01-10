@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Trash2, ChevronRight, ChevronLeft, Edit2, Lock } from 'lucide-react';
+import { X, Upload, Trash2, Edit2, Lock } from 'lucide-react';
 import Button from '../../../ui/Button';
 import { supabase } from '../../../../lib/supabase';
 import { ProductCategory, PRODUCT_CATEGORIES } from '../../../../types/product-categories';
 import {
   findCategory,
-  getCategoryPath,
   getCategoryBreadcrumb,
   getAvailableSizes,
-  formatSize,
-  getSizeMeasurements
+  formatSize
 } from '../../../../utils/product-categories';
 import { useAuthContext } from '../../../../contexts/AuthContext';
 
@@ -36,21 +34,6 @@ interface ProductFormProps {
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY'];
 const QUICK_PRICES = [19.99, 29.99, 39.99, 49.99, 59.99, 79.99, 99.99];
 const QUICK_STOCKS = [5, 10, 20, 50, 100];
-
-const SIZE_SYSTEMS = {
-  clothing: {
-    name: 'Clothing Sizes',
-    sizes: ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
-  },
-  shoes: {
-    name: 'Shoe Sizes',
-    sizes: ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', '49']
-  },
-  oneSize: {
-    name: 'One Size',
-    sizes: ['ONE SIZE']
-  }
-};
 
 const isFormValid = (data: ProductFormData): boolean => {
   return Boolean(
@@ -80,6 +63,16 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
   const [partnerWebsite, setPartnerWebsite] = useState<string>('');
   const [isUrlEditable, setIsUrlEditable] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
+  const [newTag, setNewTag] = useState('');
+  const [newMetadataKey, setNewMetadataKey] = useState('');
+  const [newMetadataValue, setNewMetadataValue] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(() => {
+    if (initialData?.category) {
+      const category = findCategory(initialData.category);
+      return category || null;
+    }
+    return null;
+  });
 
   // Fetch partner's website URL
   useEffect(() => {
@@ -114,61 +107,52 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
     return formData.title ? `${partnerWebsite}/${generateUrlSafeTitle(formData.title)}` : '';
   };
 
-  const [newTag, setNewTag] = useState('');
-  const [newMetadataKey, setNewMetadataKey] = useState('');
-  const [newMetadataValue, setNewMetadataValue] = useState('');
-  const [categoryPath, setCategoryPath] = useState<ProductCategory[]>([]);
-  const [currentCategories, setCurrentCategories] = useState<ProductCategory[]>(PRODUCT_CATEGORIES);
-  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(() => {
-    if (initialData?.category) {
-      const category = findCategory(initialData.category);
-      return category || null;
-    }
-    return null;
-  });
-
-  useEffect(() => {
-    if (initialData?.category) {
-      const path = getCategoryPath(initialData.category);
-      setCategoryPath(path);
-      setCurrentCategories(
-        path.length > 0 
-          ? path[path.length - 1].subcategories || []
-          : PRODUCT_CATEGORIES
-      );
-      const category = findCategory(initialData.category);
-      if (category) {
-        setSelectedCategory(category);
-      }
-    }
-  }, [initialData?.category]);
-
   const handleCategorySelect = (category: ProductCategory) => {
-    if (category.subcategories) {
-      // If category has subcategories, navigate into it
-      setCategoryPath([...categoryPath, category]);
-      setCurrentCategories(category.subcategories);
-    } else {
-      // Set selected category
-      setSelectedCategory(category);
-      setFormData(prev => ({
-        ...prev,
-        category: category.id,
-        size: [] // Reset size when category changes
-      }));
-    }
+    setSelectedCategory(category);
+    setFormData(prev => ({
+      ...prev,
+      category: category.id,
+      size: [] // Reset size when category changes
+    }));
   };
 
-  const handleCategoryBack = () => {
-    if (categoryPath.length > 0) {
-      const newPath = categoryPath.slice(0, -1);
-      setCategoryPath(newPath);
-      setCurrentCategories(
-        newPath.length > 0 
-          ? newPath[newPath.length - 1].subcategories || []
-          : PRODUCT_CATEGORIES
+  const renderCategorySelection = () => {
+    if (selectedCategory) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCategory(null);
+                setFormData(prev => ({ ...prev, category: '', size: [] }));
+              }}
+              className="text-sm text-text-grey hover:text-white transition-colors"
+            >
+              Change category
+            </button>
+            <span className="text-sm text-text-grey">
+              {selectedCategory.label}
+            </span>
+          </div>
+        </div>
       );
     }
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {Object.values(PRODUCT_CATEGORIES).map(category => (
+          <button
+            key={category.id}
+            type="button"
+            onClick={() => handleCategorySelect(category)}
+            className="text-left p-4 rounded-lg bg-black/20 hover:bg-black/30 transition-colors"
+          >
+            <h4 className="font-medium">{category.label}</h4>
+          </button>
+        ))}
+      </div>
+    );
   };
 
   const compressImage = async (file: File): Promise<Blob> => {
@@ -413,137 +397,52 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
     </div>
   );
 
-  const [selectedSizeSystem, setSelectedSizeSystem] = useState<'clothing' | 'shoes' | 'oneSize'>(
-    initialData?.size?.includes('ONE SIZE') ? 'oneSize' :
-    initialData?.size?.some(s => s.match(/^\d+$/)) ? 'shoes' : 'clothing'
-  );
+  const renderSizeSelection = () => {
+    if (!selectedCategory) return null;
 
-  const renderSizeSelection = () => (
-    <div>
-      <label className="block text-sm font-medium mb-2">Size System *</label>
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        {(Object.keys(SIZE_SYSTEMS) as Array<keyof typeof SIZE_SYSTEMS>).map((system) => (
-          <button
-            key={system}
-            type="button"
-            onClick={() => {
-              setSelectedSizeSystem(system);
-              setFormData(prev => ({ ...prev, size: [] }));
-            }}
-            className={`text-left p-4 rounded-lg transition-colors ${
-              selectedSizeSystem === system
-                ? 'bg-neon-yellow/10 border-2 border-neon-yellow'
-                : 'bg-black/20 hover:bg-black/30'
-            }`}
-          >
-            <h4 className="font-medium">{SIZE_SYSTEMS[system].name}</h4>
-          </button>
-        ))}
-      </div>
-
-      {selectedSizeSystem !== 'oneSize' && (
-        <div>
-          <label className="block text-sm font-medium mb-2">Sizes *</label>
-          <div className="flex flex-wrap gap-2">
-            {SIZE_SYSTEMS[selectedSizeSystem].sizes.map(size => (
-              <label key={size} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.size.includes(size)}
-                  onChange={e => {
-                    setFormData(prev => ({
-                      ...prev,
-                      size: e.target.checked
-                        ? [...prev.size, size]
-                        : prev.size.filter(s => s !== size)
-                    }));
-                  }}
-                  className="hidden"
-                />
-                <span className={`px-3 py-1 rounded-lg border-2 transition-colors ${
-                  formData.size.includes(size)
-                    ? 'border-neon-yellow bg-neon-yellow/10 text-neon-yellow'
-                    : 'border-dark-grey text-text-grey'
-                }`}>
-                  {size}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {selectedSizeSystem === 'oneSize' && (
-        <div className="mt-2">
-          <p className="text-sm text-text-grey">This product will be marked as "One Size"</p>
-          {formData.size[0] !== 'ONE SIZE' && (
-            <>{setFormData(prev => ({ ...prev, size: ['ONE SIZE'] }))}</>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderCategorySelection = () => {
-    if (selectedCategory) {
-      return (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCategory(null);
-                setFormData(prev => ({ ...prev, category: '', size: [] }));
-              }}
-              className="p-2 hover:bg-black/20 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm text-text-grey">
-              {getCategoryBreadcrumb(selectedCategory.id)}
-            </span>
-          </div>
-        </div>
-      );
-    }
+    const availableSizes = getAvailableSizes(selectedCategory.id);
+    const isOneSize = selectedCategory.id === 'accessories';
 
     return (
-      <div className="space-y-4">
-        {categoryPath.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleCategoryBack}
-              className="p-2 hover:bg-black/20 rounded-lg transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm text-text-grey">
-              {categoryPath.map(cat => cat.name).join(' > ')}
-            </span>
+      <div>
+        {isOneSize ? (
+          <div className="mt-2">
+            <p className="text-sm text-text-grey">This product will be marked as "One Size"</p>
+            {formData.size[0] !== 'os' && (
+              <>{setFormData(prev => ({ ...prev, size: ['os'] }))}</>
+            )}
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium mb-2">Sizes *</label>
+            <div className="flex flex-wrap gap-2">
+              {availableSizes.map(size => (
+                <label key={size.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.size.includes(size.value)}
+                    onChange={e => {
+                      setFormData(prev => ({
+                        ...prev,
+                        size: e.target.checked
+                          ? [...prev.size, size.value]
+                          : prev.size.filter(s => s !== size.value)
+                      }));
+                    }}
+                    className="hidden"
+                  />
+                  <span className={`px-3 py-1 rounded-lg border-2 transition-colors ${
+                    formData.size.includes(size.value)
+                      ? 'border-neon-yellow bg-neon-yellow/10 text-neon-yellow'
+                      : 'border-dark-grey text-text-grey'
+                  }`}>
+                    {size.label}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
         )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {currentCategories.map(category => (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => handleCategorySelect(category)}
-              className="text-left p-4 rounded-lg bg-black/20 hover:bg-black/30 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">{category.name}</h4>
-                {category.subcategories && <ChevronRight className="w-4 h-4 text-text-grey" />}
-              </div>
-              {category.subcategories && (
-                <p className="text-sm text-text-grey mt-1">
-                  {category.subcategories.length} subcategories
-                </p>
-              )}
-            </button>
-          ))}
-        </div>
       </div>
     );
   };
