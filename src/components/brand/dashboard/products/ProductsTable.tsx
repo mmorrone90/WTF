@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Table, 
   TableBody, 
@@ -47,71 +47,70 @@ const currencies = [
 
 export default function ProductsTable() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, loading: authLoading } = useAuthContext();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOperationLoading, setIsOperationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<(Partial<ProductFormData> & { id?: string }) | undefined>(undefined);
-  const [retryCount, setRetryCount] = useState(0);
   const [totalProducts, setTotalProducts] = useState(0);
   const PRODUCTS_PER_PAGE = 10;
-  const MAX_RETRIES = 3;
 
   // Get current page from URL or default to 1
   const currentPage = Number(searchParams.get('page')) || 1;
 
-  // Function to check session and load products
-  const checkSessionAndLoadProducts = async () => {
+  // Function to load data
+  const loadData = async (signal?: AbortSignal) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { products: brandProducts, total } = await getProducts({ 
-          partnerId: session.user.id,
-          page: currentPage,
-          limit: PRODUCTS_PER_PAGE
-        });
-        setProducts(brandProducts);
-        setTotalProducts(total);
-        setError(null);
-      } else {
-        setError('User not authenticated');
+      setIsLoading(true);
+      
+      if (signal?.aborted) return;
+
+      // Check session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      if (!session) {
+        navigate('/brand/login');
+        return;
       }
+      
+      if (signal?.aborted) return;
+
+      // Load products
+      const { products: brandProducts, total } = await getProducts({ 
+        partnerId: session.user.id,
+        page: currentPage,
+        limit: PRODUCTS_PER_PAGE
+      });
+      
+      if (signal?.aborted) return;
+
+      setProducts(brandProducts);
+      setTotalProducts(total);
+      setError(null);
     } catch (err) {
+      if (signal?.aborted) return;
       console.error('Error loading products:', err);
       setError(err instanceof Error ? err.message : 'Failed to load products');
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
     }
   };
 
-  // Initial load and page change handler
+  // Single effect to handle data loading
   useEffect(() => {
-    setIsLoading(true);
-    checkSessionAndLoadProducts();
-  }, [currentPage]);
-
-  // Subscribe to auth changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        checkSessionAndLoadProducts();
-      } else {
-        setError('User not authenticated');
-        setIsLoading(false);
-      }
-    });
-
+    const abortController = new AbortController();
+    loadData(abortController.signal);
     return () => {
-      subscription.unsubscribe();
+      abortController.abort();
     };
-  }, []);
-
-  const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
+  }, [currentPage, navigate]);
 
   const handlePageChange = (newPage: number) => {
-    // Update URL with new page number
     setSearchParams({ page: newPage.toString() });
   };
 
@@ -119,6 +118,12 @@ export default function ProductsTable() {
     try {
       setIsOperationLoading(true);
       setError(null);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/brand/login');
+        return;
+      }
 
       // Convert ProductFormData to ProductData
       const productData: ProductData = {
@@ -135,17 +140,21 @@ export default function ProductsTable() {
       };
 
       if (selectedProduct?.id) {
-        // Update existing product
         await updateProduct(selectedProduct.id, productData);
       } else {
-        // Create new product
         await createProduct(productData);
-        // Reset to first page when adding new product
         setSearchParams({ page: '1' });
       }
 
-      // Reload products to get updated data
-      await checkSessionAndLoadProducts();
+      // Reload current page
+      const { products: brandProducts, total } = await getProducts({ 
+        partnerId: session.user.id,
+        page: currentPage,
+        limit: PRODUCTS_PER_PAGE
+      });
+      
+      setProducts(brandProducts);
+      setTotalProducts(total);
       setIsFormOpen(false);
       setSelectedProduct(undefined);
     } catch (err) {
@@ -156,25 +165,6 @@ export default function ProductsTable() {
     }
   };
 
-  const handleEditProduct = (product: Product) => {
-    const formData: Partial<ProductFormData> & { id: string } = {
-      id: product.id,
-      title: product.name,
-      category: product.tags || '',
-      description: product.description || '',
-      size: product.size ? [product.size] : [],
-      images: product.product_images?.map(img => img.image_url) || [],
-      price: product.price,
-      currency: product.currency,
-      metadata: product.metadata || {},
-      tags: product.tags?.split(',').filter(Boolean) || [],
-      stock: product.stock
-    };
-    
-    setSelectedProduct(formData);
-    setIsFormOpen(true);
-  };
-
   const handleDeleteProduct = async (productId: string) => {
     if (!window.confirm('Are you sure you want to delete this product?')) {
       return;
@@ -182,6 +172,13 @@ export default function ProductsTable() {
 
     try {
       setIsOperationLoading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/brand/login');
+        return;
+      }
+
       await deleteProduct(productId);
       
       // If we're on a page higher than 1 and this is the last item on the page,
@@ -189,8 +186,15 @@ export default function ProductsTable() {
       if (currentPage > 1 && products.length === 1) {
         setSearchParams({ page: (currentPage - 1).toString() });
       } else {
-        // Otherwise, just reload the current page
-        await checkSessionAndLoadProducts();
+        // Reload current page
+        const { products: brandProducts, total } = await getProducts({ 
+          partnerId: session.user.id,
+          page: currentPage,
+          limit: PRODUCTS_PER_PAGE
+        });
+        
+        setProducts(brandProducts);
+        setTotalProducts(total);
       }
     } catch (err) {
       console.error('Error deleting product:', err);
@@ -200,7 +204,9 @@ export default function ProductsTable() {
     }
   };
 
-  if (authLoading || isLoading) {
+  const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
+
+  if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
         <div className="h-10 bg-dark-grey/20 rounded w-1/4" />
@@ -218,7 +224,7 @@ export default function ProductsTable() {
       <div className="text-center py-12 space-y-4">
         <div className="text-red-500">{error}</div>
         <button
-          onClick={() => setRetryCount(prev => prev + 1)}
+          onClick={() => loadData()}
           className="px-4 py-2 bg-dark-grey/20 rounded-lg hover:bg-dark-grey/40 transition-colors"
         >
           Try Again
@@ -260,6 +266,25 @@ export default function ProductsTable() {
       </div>
     );
   }
+
+  const handleEditProduct = (product: Product) => {
+    const formData: Partial<ProductFormData> & { id: string } = {
+      id: product.id,
+      title: product.name,
+      category: product.tags || '',
+      description: product.description || '',
+      size: product.size ? [product.size] : [],
+      images: product.product_images?.map(img => img.image_url) || [],
+      price: product.price,
+      currency: product.currency,
+      metadata: product.metadata || {},
+      tags: product.tags?.split(',').filter(Boolean) || [],
+      stock: product.stock
+    };
+    
+    setSelectedProduct(formData);
+    setIsFormOpen(true);
+  };
 
   return (
     <div className="space-y-6">
