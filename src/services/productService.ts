@@ -14,6 +14,7 @@ export interface ProductData {
   tags?: string[];
   stock: number;
   images?: string[];
+  gender?: 'male' | 'female' | 'unisex';
 }
 
 interface GetProductsOptions {
@@ -37,20 +38,14 @@ function transformProduct(
   const firstImage = dbProduct.product_images?.[0];
   const defaultImage = 'https://via.placeholder.com/400x400?text=No+Image'; // Fallback image
   
-  // Convert tags to string format
-  const tagsArray = typeof dbProduct.tags === 'string'
-    ? dbProduct.tags.split(',')
-    : dbProduct.tags || [];
-  const tagsString = Array.isArray(tagsArray) ? tagsArray.join(',') : '';
-
   return {
     id: dbProduct.id,
     name: dbProduct.name,
     description: dbProduct.description || '',
-    size: dbProduct.size || '',
+    size: dbProduct.size || [],
     price: dbProduct.price || 0,
     stock: dbProduct.stock || 0,
-    tags: tagsString,
+    tags: dbProduct.tags || [],
     metadata: dbProduct.metadata || {},
     brand: dbProduct.partners?.business_name || 'Unknown Brand',
     image: primaryImage?.image_url || firstImage?.image_url || defaultImage,
@@ -59,7 +54,8 @@ function transformProduct(
     currency: dbProduct.currency || 'USD',
     product_images: dbProduct.product_images || [],
     created_at: dbProduct.created_at,
-    originalPrice: undefined
+    originalPrice: undefined,
+    gender: dbProduct.gender || 'unisex'
   };
 }
 
@@ -105,9 +101,14 @@ export async function createProduct(data: ProductData): Promise<Product> {
       throw new Error('User not authenticated');
     }
 
-    // Format arrays for PostgreSQL
-    const formattedSize = Array.isArray(data.size) ? `{${data.size.join(',')}}` : data.size;
-    const formattedTags = data.category ? `{${data.category}}` : '{}';
+    // Combine category and gender into tags
+    const tags = [data.category];
+    if (data.gender) {
+      tags.push(data.gender);
+    }
+    if (data.tags && Array.isArray(data.tags)) {
+      tags.push(...data.tags);
+    }
 
     // Create the product
     const { data: product, error: productError } = await supabase
@@ -115,12 +116,13 @@ export async function createProduct(data: ProductData): Promise<Product> {
       .insert([{
         name: data.title,
         description: data.description,
-        size: formattedSize,
+        size: data.size,
         price: data.price,
         currency: data.currency || 'USD',
         stock: data.stock,
         metadata: data.metadata || {},
-        tags: formattedTags,
+        tags: tags,
+        gender: data.gender || 'unisex',
         partner_id: session.session.user.id,
         created_at: new Date().toISOString()
       }])
@@ -179,9 +181,14 @@ export async function createProduct(data: ProductData): Promise<Product> {
 
 export async function updateProduct(id: string, data: ProductData): Promise<Product> {
   try {
-    // Format arrays for PostgreSQL
-    const formattedSize = Array.isArray(data.size) ? `{${data.size.join(',')}}` : data.size;
-    const formattedTags = Array.isArray(data.tags) ? `{${data.tags.join(',')}}` : data.tags;
+    // Combine category and gender into tags
+    const tags = [data.category];
+    if (data.gender) {
+      tags.push(data.gender);
+    }
+    if (data.tags && Array.isArray(data.tags)) {
+      tags.push(...data.tags);
+    }
 
     // Update the product
     const { data: product, error: productError } = await supabase
@@ -189,12 +196,13 @@ export async function updateProduct(id: string, data: ProductData): Promise<Prod
       .update({
         name: data.title,
         description: data.description,
-        size: formattedSize,
+        size: data.size,
         price: data.price,
         currency: data.currency || 'USD',
         stock: data.stock,
         metadata: data.metadata || {},
-        tags: formattedTags || ''
+        tags: tags,
+        gender: data.gender || 'unisex'
       })
       .eq('id', id)
       .select()
@@ -268,10 +276,25 @@ export async function getProducts({
   partnerId
 }: GetProductsOptions = {}) {
   try {
+    console.log('Fetching products with params:', { page, limit, category, gender, includeOutOfStock, partnerId });
+    const startTime = Date.now();
+
+    // Calculate pagination
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
     let query = supabase
       .from('products')
       .select(`
-        *,
+        id,
+        name,
+        description,
+        price,
+        currency,
+        stock,
+        size,
+        tags,
+        created_at,
         product_images (
           id,
           image_url,
@@ -279,8 +302,7 @@ export async function getProducts({
         ),
         partners (
           id,
-          business_name,
-          website_url
+          business_name
         )
       `, { count: 'exact' });
 
@@ -289,26 +311,28 @@ export async function getProducts({
       query = query.gt('stock', 0);
     }
 
-    // If partnerId is provided (brand dashboard case), filter by partner_id
     if (partnerId) {
       query = query.eq('partner_id', partnerId);
     }
 
+    // Use array overlaps for category and gender filters
     if (category) {
-      query = query.ilike('tags', `%${category.toLowerCase()}%`);
+      const categoryTag = category.toLowerCase();
+      query = query.or(`tags.cs.{${categoryTag}},tags.ilike.%${categoryTag}%`);
     }
 
     if (gender) {
-      query = query.ilike('tags', `%${gender.toLowerCase()}%`);
+      const genderTag = gender.toLowerCase();
+      query = query.or(`tags.cs.{${genderTag}},tags.ilike.%${genderTag}%`);
     }
-
-    // Calculate pagination
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
 
     const { data, error, count } = await query
       .order('created_at', { ascending: false })
       .range(from, to);
+
+    const endTime = Date.now();
+    console.log('Query execution time:', endTime - startTime, 'ms');
+    console.log('Results count:', count);
 
     if (error) {
       console.error('Supabase query error:', error);
@@ -321,6 +345,7 @@ export async function getProducts({
     }
     
     const transformedProducts = data.map(transformProduct);
+    console.log('Transformed products count:', transformedProducts.length);
     
     return {
       products: transformedProducts,

@@ -2,15 +2,15 @@ export interface Product {
   id: string;
   name: string;
   description?: string;
-  size: string;
+  size?: string[];
   price: number;
   currency: string;
-  partner_id?: string;
-  category_id?: string;
   stock: number;
   metadata?: Record<string, any>;
-  tags?: string;
-  created_at?: string;
+  tags?: string[];
+  partner_id: string;
+  created_at: string;
+  gender?: 'male' | 'female' | 'unisex';
 }
 
 export interface ProductImage {

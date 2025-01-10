@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Table, 
@@ -36,6 +36,7 @@ interface ProductFormData {
   metadata: Record<string, string>;
   tags: string[];
   stock: number;
+  gender?: 'male' | 'female' | 'unisex';
 }
 
 const currencies = [
@@ -55,19 +56,17 @@ export default function ProductsTable() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<(Partial<ProductFormData> & { id?: string }) | undefined>(undefined);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(Date.now());
   const PRODUCTS_PER_PAGE = 10;
+  const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  const SESSION_CHECK_INTERVAL = 60 * 1000; // 1 minute
 
   // Get current page from URL or default to 1
   const currentPage = Number(searchParams.get('page')) || 1;
 
-  // Function to load data
-  const loadData = async (signal?: AbortSignal) => {
+  // Function to check session and refresh data if needed
+  const checkSessionAndRefresh = useCallback(async (force: boolean = false) => {
     try {
-      setIsLoading(true);
-      
-      if (signal?.aborted) return;
-
-      // Check session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) throw sessionError;
@@ -75,40 +74,67 @@ export default function ProductsTable() {
         navigate('/brand/login');
         return;
       }
-      
-      if (signal?.aborted) return;
 
-      // Load products
-      const { products: brandProducts, total } = await getProducts({ 
-        partnerId: session.user.id,
-        page: currentPage,
-        limit: PRODUCTS_PER_PAGE
-      });
-      
-      if (signal?.aborted) return;
-
-      setProducts(brandProducts);
-      setTotalProducts(total);
-      setError(null);
-    } catch (err) {
-      if (signal?.aborted) return;
-      console.error('Error loading products:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load products');
-    } finally {
-      if (!signal?.aborted) {
+      const now = Date.now();
+      // Only fetch if forced or refresh interval has passed
+      if (force || now - lastRefreshTime >= REFRESH_INTERVAL) {
+        setIsLoading(true);
+        const { products: brandProducts, total } = await getProducts({ 
+          partnerId: session.user.id,
+          page: currentPage,
+          limit: PRODUCTS_PER_PAGE
+        });
+        
+        setProducts(brandProducts);
+        setTotalProducts(total);
+        setLastRefreshTime(now);
+        setError(null);
         setIsLoading(false);
       }
+    } catch (err) {
+      console.error('Error checking session or refreshing data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to refresh data');
+      setIsLoading(false);
     }
-  };
+  }, [currentPage, lastRefreshTime, navigate]);
 
-  // Single effect to handle data loading
+  // Effect for initial data load and page changes
   useEffect(() => {
     const abortController = new AbortController();
-    loadData(abortController.signal);
+    
+    if (!abortController.signal.aborted) {
+      // Force refresh on page change or initial load
+      checkSessionAndRefresh(true);
+    }
+
     return () => {
       abortController.abort();
     };
-  }, [currentPage, navigate]);
+  }, [currentPage]);
+
+  // Effect for periodic session check and data refresh
+  useEffect(() => {
+    let mounted = true;
+    const sessionCheckInterval = setInterval(() => {
+      if (mounted) {
+        checkSessionAndRefresh(false);
+      }
+    }, SESSION_CHECK_INTERVAL);
+
+    // Add visibility change listener
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && mounted) {
+        checkSessionAndRefresh(true);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      mounted = false;
+      clearInterval(sessionCheckInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString() });
@@ -224,7 +250,7 @@ export default function ProductsTable() {
       <div className="text-center py-12 space-y-4">
         <div className="text-red-500">{error}</div>
         <button
-          onClick={() => loadData()}
+          onClick={() => checkSessionAndRefresh(true)}
           className="px-4 py-2 bg-dark-grey/20 rounded-lg hover:bg-dark-grey/40 transition-colors"
         >
           Try Again
@@ -268,18 +294,26 @@ export default function ProductsTable() {
   }
 
   const handleEditProduct = (product: Product) => {
+    // Extract category and gender from tags
+    const tags = Array.isArray(product.tags) ? product.tags : [];
+    const gender = product.gender || 'unisex';
+    
+    // Find the first tag that's not the gender as the category
+    const category = tags.find(tag => tag !== gender) || '';
+
     const formData: Partial<ProductFormData> & { id: string } = {
       id: product.id,
       title: product.name,
-      category: product.tags || '',
+      category: category,
       description: product.description || '',
-      size: product.size ? [product.size] : [],
+      size: product.size || [],
       images: product.product_images?.map(img => img.image_url) || [],
       price: product.price,
       currency: product.currency,
       metadata: product.metadata || {},
-      tags: product.tags?.split(',').filter(Boolean) || [],
-      stock: product.stock
+      tags: tags.filter(tag => tag !== gender && tag !== category),
+      stock: product.stock,
+      gender: gender
     };
     
     setSelectedProduct(formData);
@@ -323,7 +357,7 @@ export default function ProductsTable() {
           <TableBody>
             {products.map((product) => {
               const currencySymbol = currencies.find(c => c.code === product.currency)?.symbol;
-              const categories = product.tags?.split(',').filter(Boolean) || [];
+              const categories = Array.isArray(product.tags) ? product.tags : [];
               
               return (
                 <TableRow key={product.id}>
