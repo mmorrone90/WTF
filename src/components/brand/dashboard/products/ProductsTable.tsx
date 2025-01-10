@@ -324,7 +324,6 @@ export default function ProductsTable() {
     <div className="space-y-6">
       <div className="flex justify-end">
         <Button onClick={() => setIsFormOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
           Add Product
         </Button>
       </div>
