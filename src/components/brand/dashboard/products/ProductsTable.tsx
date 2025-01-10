@@ -351,6 +351,7 @@ export default function ProductsTable() {
               <TableHead>Size</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
+              <TableHead>Product URL</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -385,6 +386,18 @@ export default function ProductsTable() {
                     </div>
                   </TableCell>
                   <TableCell>{product.stock}</TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {product.product_url ? (
+                      <a 
+                        href={product.product_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-neon-yellow hover:underline"
+                      >
+                        {product.product_url}
+                      </a>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <button

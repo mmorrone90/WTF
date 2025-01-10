@@ -11,6 +11,7 @@ export interface Product {
   partner_id: string;
   created_at: string;
   gender?: 'male' | 'female' | 'unisex';
+  product_url?: string;
 }
 
 export interface ProductImage {

@@ -15,6 +15,7 @@ interface ProductInfoProps {
   description: string;
   material?: string;
   partnerUrl?: string;
+  product_url?: string;
   deliveryDate?: string;
   size?: string;
   stock?: number;
@@ -30,6 +31,7 @@ export default function ProductInfo({
   description,
   material,
   partnerUrl,
+  product_url,
   deliveryDate,
   size,
   stock
@@ -166,7 +168,7 @@ export default function ProductInfo({
     // Wait for all animations to finish before opening URL
     setTimeout(() => {
       setIsLoading(false);
-      window.open(partnerUrl, '_blank');
+      window.open(product_url || partnerUrl, '_blank');
     }, duration);
   };
 
@@ -241,7 +243,7 @@ export default function ProductInfo({
 
       {/* CTA Button */}
       <div className="space-y-4">
-        {partnerUrl ? (
+        {(product_url || partnerUrl) ? (
           <motion.button
             onClick={handleBuyClick}
             disabled={isLoading || stock === 0}
@@ -268,7 +270,7 @@ export default function ProductInfo({
             This product is currently unavailable
           </p>
         )}
-        {partnerUrl && (
+        {(product_url || partnerUrl) && (
           <p className="text-sm text-text-grey text-center">
             WTF may earn a commission from this link
           </p>

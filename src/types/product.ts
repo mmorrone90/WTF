@@ -10,4 +10,5 @@ export interface Product extends Omit<DbProduct, 'partner_id' | 'category_id'> {
   metadata?: Record<string, any>; // Product metadata
   discount?: string; // UI-specific field for discount display
   sold?: string; // UI-specific field for number of items sold
+  product_url?: string; // Generated URL for the product
 }

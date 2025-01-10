@@ -1,128 +1,69 @@
-import React, { useState, useMemo } from 'react';
-import { Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu } from 'lucide-react';
 import FilterSidebar from './FilterSidebar';
 import ProductGrid from './ProductGrid';
+import { useProducts } from '../../hooks/useProducts';
 import { Product } from '../../types/product';
-import { ProductGridSkeleton } from '../ui/Shimmer';
 
 interface AllProductsProps {
-  initialProducts: Product[];
-  isLoading: boolean;
-  error: Error | null;
-  hasMore: boolean;
-  onLoadMore: () => void;
+  initialProducts?: Product[];
 }
 
-export default function AllProducts({ 
-  initialProducts, 
-  isLoading, 
-  error,
-  hasMore,
-  onLoadMore 
-}: AllProductsProps) {
+export default function AllProducts({ initialProducts = [] }: AllProductsProps) {
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedGender, setSelectedGender] = useState('');
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Filter products locally instead of making API calls
-  const filteredProducts = useMemo(() => {
-    let result = initialProducts;
-
-    if (selectedCategory || selectedGender) {
-      result = result.filter(product => {
-        const tags = Array.isArray(product.tags) ? product.tags : product.tags?.toLowerCase().split(',') || [];
-        const matchesCategory = !selectedCategory || tags.includes(selectedCategory.toLowerCase());
-        const matchesGender = !selectedGender || tags.includes(selectedGender.toLowerCase());
-        return matchesCategory && matchesGender;
-      });
-    }
-
-    return result;
-  }, [initialProducts, selectedCategory, selectedGender]);
+  const { products, isLoading, error } = useProducts({
+    category: selectedCategory,
+    includeOutOfStock: false
+  });
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category === selectedCategory ? '' : category);
   };
 
-  const handleGenderChange = (gender: string) => {
-    setSelectedGender(gender === selectedGender ? '' : gender);
-  };
-
   return (
-    <div className="relative">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl sm:text-3xl font-bold">All Products</h2>
-        <button
-          onClick={() => setIsMobileFiltersOpen(true)}
-          className="lg:hidden px-4 py-2 text-sm font-medium text-neon-yellow border border-neon-yellow rounded-lg hover:bg-neon-yellow/10"
-        >
-          <Filter className="w-5 h-5" />
-        </button>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      {/* Mobile Filter Button */}
+      <button
+        onClick={() => setShowMobileFilters(true)}
+        className="lg:hidden flex items-center gap-2 mb-4 text-text-grey hover:text-white transition-colors"
+      >
+        <Menu className="w-5 h-5" />
+        <span>Filters</span>
+      </button>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Mobile Filter Sidebar */}
-        <div 
-          className={`
-            fixed inset-0 z-[100] lg:hidden bg-black/95 backdrop-blur-md transform transition-transform duration-300 overflow-y-auto
-            ${isMobileFiltersOpen ? 'translate-x-0' : 'translate-x-full'}
-          `}
-        >
-          <div className="min-h-screen flex flex-col">
-            <div className="sticky top-0 bg-black/95 z-50 flex items-center justify-between p-4 border-b border-white/10">
-              <h2 className="text-xl font-bold">Filters</h2>
-              <button
-                onClick={() => setIsMobileFiltersOpen(false)}
-                className="p-2 text-text-grey hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <FilterSidebar
-                selectedCategory={selectedCategory}
-                onCategoryChange={handleCategoryChange}
-                selectedGender={selectedGender}
-                onGenderChange={handleGenderChange}
-              />
-            </div>
-          </div>
-        </div>
-
+      <div className="flex gap-8">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block lg:w-64 flex-shrink-0">
-          <h2 className="text-xl font-bold mb-6">Filter by category</h2>
+        <div className="hidden lg:block w-64 flex-shrink-0">
           <FilterSidebar
             selectedCategory={selectedCategory}
             onCategoryChange={handleCategoryChange}
-            selectedGender={selectedGender}
-            onGenderChange={handleGenderChange}
           />
         </div>
 
+        {/* Mobile Sidebar */}
+        {showMobileFilters && (
+          <div className="lg:hidden fixed inset-0 bg-black z-50">
+            <div className="h-full overflow-auto">
+              <FilterSidebar
+                selectedCategory={selectedCategory}
+                onCategoryChange={handleCategoryChange}
+                isMobile
+              />
+            </div>
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="absolute top-4 right-4 text-text-grey hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+        )}
+
         {/* Product Grid */}
         <div className="flex-1">
-          {error ? (
-            <div className="text-center text-text-grey py-12">{error.message}</div>
-          ) : (
-            <div className="space-y-8">
-              <ProductGrid 
-                products={filteredProducts}
-                isLoading={false}
-              />
-              {isLoading && <ProductGridSkeleton count={6} />}
-              {!isLoading && hasMore && (
-                <div className="text-center">
-                  <button
-                    onClick={onLoadMore}
-                    className="px-6 py-3 bg-dark-grey/50 text-white rounded-lg hover:bg-dark-grey/70 transition-colors"
-                  >
-                    Load More
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          <ProductGrid products={products} isLoading={isLoading} />
         </div>
       </div>
     </div>

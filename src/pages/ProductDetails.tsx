@@ -27,9 +27,14 @@ export default function ProductDetails() {
         setProduct(productData);
         
         // Get product tags, ensuring we handle both array and string formats
-        const productTags = Array.isArray(productData.tags) 
-          ? productData.tags 
-          : productData.tags?.toLowerCase().split(',') || [];
+        let productTags: string[] = [];
+        if (productData.tags) {
+          if (Array.isArray(productData.tags)) {
+            productTags = productData.tags;
+          } else if (typeof productData.tags === 'string') {
+            productTags = productData.tags.toLowerCase().split(',');
+          }
+        }
 
         // Fetch related products directly from Supabase
         const related = await getRelatedProducts(id, productTags);
@@ -71,6 +76,7 @@ export default function ProductDetails() {
   }
 
   const productImages = product.product_images?.map(img => img.image_url) || [product.image];
+  const displaySize = Array.isArray(product.size) ? product.size.join(', ') : product.size;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -86,7 +92,8 @@ export default function ProductDetails() {
           description={product.description || ''}
           material={product.metadata?.material}
           partnerUrl={product.partnerUrl}
-          size={product.size}
+          product_url={product.product_url}
+          size={displaySize}
           stock={product.stock}
         />
       </div>

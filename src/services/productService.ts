@@ -14,14 +14,12 @@ export interface ProductData {
   tags?: string[];
   stock: number;
   images?: string[];
-  gender?: 'male' | 'female' | 'unisex';
 }
 
 interface GetProductsOptions {
   page?: number;
   limit?: number;
   category?: string;
-  gender?: string;
   includeOutOfStock?: boolean;
   partnerId?: string;
 }
@@ -55,43 +53,8 @@ function transformProduct(
     product_images: dbProduct.product_images || [],
     created_at: dbProduct.created_at,
     originalPrice: undefined,
-    gender: dbProduct.gender || 'unisex'
+    product_url: dbProduct.product_url || ''
   };
-}
-
-export async function getRelatedProducts(productId: string, tags: string[], limit: number = 4) {
-  try {
-    // Convert tags to lowercase for case-insensitive comparison
-    const lowerTags = tags.map(tag => tag.toLowerCase());
-    
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        product_images (
-          id,
-          image_url,
-          is_primary
-        ),
-        partners (
-          id,
-          business_name,
-          website_url
-        )
-      `)
-      .neq('id', productId) // Exclude current product
-      .contains('tags', lowerTags) // Find products with matching tags
-      .limit(limit)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    if (!data) return [];
-    
-    return data.map(transformProduct);
-  } catch (error) {
-    console.error('Error fetching related products:', error);
-    return [];
-  }
 }
 
 export async function createProduct(data: ProductData): Promise<Product> {
@@ -101,14 +64,20 @@ export async function createProduct(data: ProductData): Promise<Product> {
       throw new Error('User not authenticated');
     }
 
-    // Combine category and gender into tags
-    const tags = [data.category];
-    if (data.gender) {
-      tags.push(data.gender);
-    }
-    if (data.tags && Array.isArray(data.tags)) {
-      tags.push(...data.tags);
-    }
+    // Get partner's website URL
+    const { data: partner, error: partnerError } = await supabase
+      .from('partners')
+      .select('website_url')
+      .eq('id', session.session.user.id)
+      .single();
+
+    if (partnerError) throw partnerError;
+
+    // Extract custom URL from metadata if present
+    const customUrl = data.metadata?.product_url;
+    const { metadata, ...restData } = data;
+    const cleanMetadata = { ...metadata };
+    delete cleanMetadata.product_url;
 
     // Create the product
     const { data: product, error: productError } = await supabase
@@ -120,11 +89,11 @@ export async function createProduct(data: ProductData): Promise<Product> {
         price: data.price,
         currency: data.currency || 'USD',
         stock: data.stock,
-        metadata: data.metadata || {},
-        tags: tags,
-        gender: data.gender || 'unisex',
+        metadata: cleanMetadata,
+        tags: data.tags || [],
         partner_id: session.session.user.id,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        product_url: customUrl
       }])
       .select()
       .single();
@@ -181,14 +150,26 @@ export async function createProduct(data: ProductData): Promise<Product> {
 
 export async function updateProduct(id: string, data: ProductData): Promise<Product> {
   try {
-    // Combine category and gender into tags
-    const tags = [data.category];
-    if (data.gender) {
-      tags.push(data.gender);
+    // Get current session
+    const { data: session } = await supabase.auth.getSession();
+    if (!session?.session?.user) {
+      throw new Error('User not authenticated');
     }
-    if (data.tags && Array.isArray(data.tags)) {
-      tags.push(...data.tags);
-    }
+
+    // Get partner's website URL
+    const { data: partner, error: partnerError } = await supabase
+      .from('partners')
+      .select('website_url')
+      .eq('id', session.session.user.id)
+      .single();
+
+    if (partnerError) throw partnerError;
+
+    // Extract custom URL from metadata if present
+    const customUrl = data.metadata?.product_url;
+    const { metadata, ...restData } = data;
+    const cleanMetadata = { ...metadata };
+    delete cleanMetadata.product_url;
 
     // Update the product
     const { data: product, error: productError } = await supabase
@@ -200,9 +181,9 @@ export async function updateProduct(id: string, data: ProductData): Promise<Prod
         price: data.price,
         currency: data.currency || 'USD',
         stock: data.stock,
-        metadata: data.metadata || {},
-        tags: tags,
-        gender: data.gender || 'unisex'
+        metadata: cleanMetadata,
+        tags: data.tags || [],
+        product_url: customUrl
       })
       .eq('id', id)
       .select()
@@ -271,12 +252,11 @@ export async function getProducts({
   page = 1,
   limit = 12,
   category,
-  gender,
   includeOutOfStock = true,
   partnerId
 }: GetProductsOptions = {}) {
   try {
-    console.log('Fetching products with params:', { page, limit, category, gender, includeOutOfStock, partnerId });
+    console.log('Fetching products with params:', { page, limit, category, includeOutOfStock, partnerId });
     const startTime = Date.now();
 
     // Calculate pagination
@@ -295,6 +275,7 @@ export async function getProducts({
         size,
         tags,
         created_at,
+        product_url,
         product_images (
           id,
           image_url,
@@ -302,7 +283,8 @@ export async function getProducts({
         ),
         partners (
           id,
-          business_name
+          business_name,
+          website_url
         )
       `, { count: 'exact' });
 
@@ -315,15 +297,10 @@ export async function getProducts({
       query = query.eq('partner_id', partnerId);
     }
 
-    // Use array overlaps for category and gender filters
+    // Use array overlaps for category filter
     if (category) {
       const categoryTag = category.toLowerCase();
       query = query.or(`tags.cs.{${categoryTag}},tags.ilike.%${categoryTag}%`);
-    }
-
-    if (gender) {
-      const genderTag = gender.toLowerCase();
-      query = query.or(`tags.cs.{${genderTag}},tags.ilike.%${genderTag}%`);
     }
 
     const { data, error, count } = await query
@@ -433,5 +410,40 @@ export async function deleteProduct(id: string): Promise<void> {
   } catch (error) {
     console.error('Error deleting product:', error);
     throw error;
+  }
+}
+
+export async function getRelatedProducts(productId: string, tags: string[], limit: number = 4) {
+  try {
+    // Convert tags to lowercase for case-insensitive comparison
+    const lowerTags = tags.map(tag => tag.toLowerCase());
+    
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        product_images (
+          id,
+          image_url,
+          is_primary
+        ),
+        partners (
+          id,
+          business_name,
+          website_url
+        )
+      `)
+      .neq('id', productId) // Exclude current product
+      .contains('tags', lowerTags) // Find products with matching tags
+      .limit(limit)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    if (!data) return [];
+    
+    return data.map(transformProduct);
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+    return [];
   }
 }
