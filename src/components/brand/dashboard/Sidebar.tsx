@@ -1,7 +1,8 @@
 import React from 'react';
-    import { Link, useLocation } from 'react-router-dom';
-    import { Home, BarChart2, FileText, ShoppingBag, MessageSquare, Settings, HelpCircle, User } from 'lucide-react';
+    import { Link, useLocation, useNavigate } from 'react-router-dom';
+    import { Home, BarChart2, FileText, ShoppingBag, MessageSquare, Settings, HelpCircle, User, LogOut } from 'lucide-react';
     import { useAuthContext } from '../../../contexts/AuthContext';
+    import { signOut } from '../../../services/auth/sessionService';
 
     const menuItems = [
       { icon: Home, label: 'Home', path: '/' },
@@ -15,8 +16,19 @@ import React from 'react';
 
     export default function Sidebar() {
       const location = useLocation();
+      const navigate = useNavigate();
       const { profile } = useAuthContext();
       const brandName = profile?.business_name || "Brand Name";
+
+      const handleLogout = async () => {
+        try {
+          await signOut();
+          localStorage.clear();
+          navigate('/');
+        } catch (error) {
+          console.error('Error signing out:', error);
+        }
+      };
 
       return (
         <div className="w-64 h-screen fixed left-0 top-0 bg-dark-grey border-r border-dark-grey">
@@ -40,7 +52,10 @@ import React from 'react';
             </nav>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-dark-grey">
+          <button
+            onClick={handleLogout}
+            className="absolute bottom-0 left-0 right-0 p-6 border-t border-dark-grey w-full text-left hover:bg-dark-grey/50 transition-colors"
+          >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-neon-yellow/10 rounded-lg">
                 <User className="w-6 h-6 text-neon-yellow" />
@@ -49,8 +64,9 @@ import React from 'react';
                 <p className="font-bold">{brandName}</p>
                 <p className="text-sm text-text-grey">Brand Partner</p>
               </div>
+              <LogOut className="w-4 h-4 ml-auto text-text-grey" />
             </div>
-          </div>
+          </button>
         </div>
       );
     }
