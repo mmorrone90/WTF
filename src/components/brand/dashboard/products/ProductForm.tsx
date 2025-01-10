@@ -44,6 +44,62 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
   const [newMetadataKey, setNewMetadataKey] = useState('');
   const [newMetadataValue, setNewMetadataValue] = useState('');
 
+  const compressImage = async (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+
+          // Calculate new dimensions while maintaining aspect ratio
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 2048; // Increased from 1200 to 2048 for higher resolution
+
+          if (width > height && width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+
+          // Set canvas dimensions
+          canvas.width = width;
+          canvas.height = height;
+
+          // Draw image with smoothing
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to blob with optimal quality
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Failed to compress image'));
+              }
+            },
+            'image/jpeg', // Changed from WebP to JPEG for better quality
+            0.95 // Increased from 0.85 to 0.95 for higher quality
+          );
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -55,13 +111,21 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
 
     try {
       const uploadPromises = Array.from(files).map(async (file) => {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        // Compress image before upload
+        const compressedBlob = await compressImage(file);
+        const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, '.jpg'), {
+          type: 'image/jpeg'
+        });
+
+        const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.jpg`;
         const filePath = `${fileName}`;
 
         const { error: uploadError, data } = await supabase.storage
           .from('product_images')
-          .upload(filePath, file);
+          .upload(filePath, compressedFile, {
+            cacheControl: '3600',
+            contentType: 'image/jpeg'
+          });
 
         if (uploadError) throw uploadError;
 

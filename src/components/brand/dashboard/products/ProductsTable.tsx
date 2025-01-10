@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Table, 
   TableBody, 
@@ -45,42 +46,79 @@ const currencies = [
 ];
 
 export default function ProductsTable() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user, loading: authLoading } = useAuthContext();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isOperationLoading, setIsOperationLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<(Partial<ProductFormData> & { id?: string }) | undefined>(undefined);
+  const [retryCount, setRetryCount] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const PRODUCTS_PER_PAGE = 10;
+  const MAX_RETRIES = 3;
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  // Get current page from URL or default to 1
+  const currentPage = Number(searchParams.get('page')) || 1;
 
-  async function loadProducts() {
+  // Function to check session and load products
+  const checkSessionAndLoadProducts = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) {
-        throw new Error('User not authenticated');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { products: brandProducts, total } = await getProducts({ 
+          partnerId: session.user.id,
+          page: currentPage,
+          limit: PRODUCTS_PER_PAGE
+        });
+        setProducts(brandProducts);
+        setTotalProducts(total);
+        setError(null);
+      } else {
+        setError('User not authenticated');
       }
-
-      const { products: brandProducts } = await getProducts({ partnerId: session.session.user.id });
-      setProducts(brandProducts);
     } catch (err) {
       console.error('Error loading products:', err);
-      setError(err instanceof Error ? err : new Error('Failed to load products'));
+      setError(err instanceof Error ? err.message : 'Failed to load products');
     } finally {
       setIsLoading(false);
     }
-  }
+  };
+
+  // Initial load and page change handler
+  useEffect(() => {
+    setIsLoading(true);
+    checkSessionAndLoadProducts();
+  }, [currentPage]);
+
+  // Subscribe to auth changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        checkSessionAndLoadProducts();
+      } else {
+        setError('User not authenticated');
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE);
+
+  const handlePageChange = (newPage: number) => {
+    // Update URL with new page number
+    setSearchParams({ page: newPage.toString() });
+  };
 
   const handleSubmit = async (formData: ProductFormData) => {
     try {
       setIsOperationLoading(true);
       setError(null);
-      let updatedProduct: Product;
 
       // Convert ProductFormData to ProductData
       const productData: ProductData = {
@@ -98,19 +136,21 @@ export default function ProductsTable() {
 
       if (selectedProduct?.id) {
         // Update existing product
-        updatedProduct = await updateProduct(selectedProduct.id, productData);
-        setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+        await updateProduct(selectedProduct.id, productData);
       } else {
         // Create new product
-        updatedProduct = await createProduct(productData);
-        setProducts(prev => [updatedProduct, ...prev]);
+        await createProduct(productData);
+        // Reset to first page when adding new product
+        setSearchParams({ page: '1' });
       }
 
+      // Reload products to get updated data
+      await checkSessionAndLoadProducts();
       setIsFormOpen(false);
       setSelectedProduct(undefined);
     } catch (err) {
       console.error('Error saving product:', err);
-      setError(err instanceof Error ? err : new Error('Failed to save product'));
+      setError(err instanceof Error ? err.message : 'Failed to save product');
     } finally {
       setIsOperationLoading(false);
     }
@@ -143,16 +183,24 @@ export default function ProductsTable() {
     try {
       setIsOperationLoading(true);
       await deleteProduct(productId);
-      setProducts(prev => prev.filter(p => p.id !== productId));
+      
+      // If we're on a page higher than 1 and this is the last item on the page,
+      // go to the previous page
+      if (currentPage > 1 && products.length === 1) {
+        setSearchParams({ page: (currentPage - 1).toString() });
+      } else {
+        // Otherwise, just reload the current page
+        await checkSessionAndLoadProducts();
+      }
     } catch (err) {
       console.error('Error deleting product:', err);
-      setError(err instanceof Error ? err : new Error('Failed to delete product'));
+      setError(err instanceof Error ? err.message : 'Failed to delete product');
     } finally {
       setIsOperationLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="animate-pulse space-y-4">
         <div className="h-10 bg-dark-grey/20 rounded w-1/4" />
@@ -161,6 +209,54 @@ export default function ProductsTable() {
             <div key={i} className="h-16 bg-dark-grey/20 rounded" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 space-y-4">
+        <div className="text-red-500">{error}</div>
+        <button
+          onClick={() => setRetryCount(prev => prev + 1)}
+          className="px-4 py-2 bg-dark-grey/20 rounded-lg hover:bg-dark-grey/40 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-end">
+          <Button onClick={() => setIsFormOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Product
+          </Button>
+        </div>
+        <div className="text-center py-12 bg-dark-grey/20 rounded-xl">
+          <p className="text-text-grey mb-4">No products found</p>
+          <Button onClick={() => setIsFormOpen(true)}>
+            Add Your First Product
+          </Button>
+        </div>
+        {isFormOpen && (
+          <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 overflow-y-auto">
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <ProductForm
+                initialData={selectedProduct}
+                onSubmit={handleSubmit}
+                onClose={() => {
+                  setIsFormOpen(false);
+                  setSelectedProduct(undefined);
+                }}
+                isLoading={isOperationLoading}
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -174,25 +270,9 @@ export default function ProductsTable() {
         </Button>
       </div>
 
-      {isFormOpen && (
-        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 overflow-y-auto">
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <ProductForm
-              initialData={selectedProduct}
-              onSubmit={handleSubmit}
-              onClose={() => {
-                setIsFormOpen(false);
-                setSelectedProduct(undefined);
-              }}
-              isLoading={isOperationLoading}
-            />
-          </div>
-        </div>
-      )}
-
       {error && (
         <div className="bg-red-500/10 text-red-500 px-4 py-2 rounded-lg">
-          {error.message}
+          {error}
         </div>
       )}
 
@@ -271,7 +351,50 @@ export default function ProductsTable() {
             })}
           </TableBody>
         </Table>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-dark-grey">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-text-grey">
+                Page {currentPage} of {totalPages}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || isLoading}
+                variant="outline"
+              >
+                Previous
+              </Button>
+              <Button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || isLoading}
+                variant="outline"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 overflow-y-auto">
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <ProductForm
+              initialData={selectedProduct}
+              onSubmit={handleSubmit}
+              onClose={() => {
+                setIsFormOpen(false);
+                setSelectedProduct(undefined);
+              }}
+              isLoading={isOperationLoading}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
