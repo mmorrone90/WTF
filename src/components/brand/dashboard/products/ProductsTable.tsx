@@ -59,17 +59,13 @@ export default function ProductsTable() {
   const [selectedProduct, setSelectedProduct] = useState<(Partial<ProductFormData> & { id?: string }) | undefined>(undefined);
   const [totalProducts, setTotalProducts] = useState(0);
   const lastRefreshTimeRef = useRef<number>(Date.now());
+  const currentPageRef = useRef(Number(searchParams.get('page')) || 1);
+  const mountedRef = useRef(false);
   const PRODUCTS_PER_PAGE = 10;
   const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
   const SESSION_CHECK_INTERVAL = 60 * 1000; // 1 minute
-  const lastVisibilityChangeRef = useRef<number>(Date.now());
-  const MIN_VISIBILITY_REFRESH_INTERVAL = 2000; // 2 seconds minimum between visibility refreshes
 
-  // Get current page from URL or default to 1
-  const currentPage = Number(searchParams.get('page')) || 1;
-
-  // Function to check session and refresh data if needed
-  const checkSessionAndRefresh = useCallback(async (force: boolean = false, preserveExisting: boolean = true) => {
+  const fetchDataRef = useRef(async () => {
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -87,78 +83,46 @@ export default function ProductsTable() {
         return;
       }
 
-      const now = Date.now();
-      if (force || now - lastRefreshTimeRef.current >= REFRESH_INTERVAL) {
-        if (!preserveExisting) {
-          setIsLoading(true);
-        }
-        
-        try {
-          const { products: brandProducts, total } = await getProducts({ 
-            partnerId: session.user.id,
-            page: currentPage,
-            limit: PRODUCTS_PER_PAGE
-          });
-          
-          setProducts(brandProducts);
-          setTotalProducts(total);
-          lastRefreshTimeRef.current = now;
-          setError(null);
-        } catch (error: any) {
-          throw new Error(error?.message || 'Failed to fetch products');
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refresh data');
+      setIsLoading(true);
+      const { products: brandProducts, total } = await getProducts({ 
+        partnerId: session.user.id,
+        page: currentPageRef.current,
+        limit: PRODUCTS_PER_PAGE
+      });
+      
+      setProducts(brandProducts);
+      setTotalProducts(total);
+      lastRefreshTimeRef.current = Date.now();
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
       setIsLoading(false);
     }
-  }, [currentPage, navigate]);
+  });
 
-  // Effect for initial data load and page changes
+  // Combined effect for data fetching
   useEffect(() => {
-    const abortController = new AbortController();
-    
-    if (!abortController.signal.aborted) {
-      checkSessionAndRefresh(true, false);
+    // Update page number when searchParams change
+    currentPageRef.current = Number(searchParams.get('page')) || 1;
+
+    // Only fetch if it's not the initial mount or if it's the first time
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      fetchDataRef.current();
+    } else if (searchParams.get('page')) {
+      fetchDataRef.current();
     }
 
-    return () => {
-      abortController.abort();
-    };
-  }, [currentPage, checkSessionAndRefresh]);
-
-  // Effect for periodic session check and data refresh
-  useEffect(() => {
-    let mounted = true;
-    
-    const sessionCheckInterval = setInterval(() => {
-      if (mounted && document.visibilityState === 'visible') {
-        checkSessionAndRefresh(false, true);
+    // Set up periodic refresh
+    const intervalId = setInterval(() => {
+      const now = Date.now();
+      if (now - lastRefreshTimeRef.current >= REFRESH_INTERVAL) {
+        fetchDataRef.current();
       }
     }, SESSION_CHECK_INTERVAL);
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== 'visible' || !mounted) return;
-      
-      const now = Date.now();
-      const timeSinceLastChange = now - lastVisibilityChangeRef.current;
-      
-      if (timeSinceLastChange >= MIN_VISIBILITY_REFRESH_INTERVAL) {
-        lastVisibilityChangeRef.current = now;
-        checkSessionAndRefresh(true, true);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      mounted = false;
-      clearInterval(sessionCheckInterval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [checkSessionAndRefresh]);
+    return () => clearInterval(intervalId);
+  }, [navigate, searchParams]);
 
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString() });
@@ -199,7 +163,7 @@ export default function ProductsTable() {
       // Reload current page
       const { products: brandProducts, total } = await getProducts({ 
         partnerId: session.user.id,
-        page: currentPage,
+        page: currentPageRef.current,
         limit: PRODUCTS_PER_PAGE
       });
       
@@ -233,13 +197,13 @@ export default function ProductsTable() {
       
       // If we're on a page higher than 1 and this is the last item on the page,
       // go to the previous page
-      if (currentPage > 1 && products.length === 1) {
-        setSearchParams({ page: (currentPage - 1).toString() });
+      if (currentPageRef.current > 1 && products.length === 1) {
+        setSearchParams({ page: (currentPageRef.current - 1).toString() });
       } else {
         // Reload current page
         const { products: brandProducts, total } = await getProducts({ 
           partnerId: session.user.id,
-          page: currentPage,
+          page: currentPageRef.current,
           limit: PRODUCTS_PER_PAGE
         });
         
@@ -365,7 +329,7 @@ export default function ProductsTable() {
         // Reload current page
         const { products: brandProducts, total } = await getProducts({ 
           partnerId: session.user.id,
-          page: currentPage,
+          page: currentPageRef.current,
           limit: PRODUCTS_PER_PAGE
         });
         
@@ -399,7 +363,7 @@ export default function ProductsTable() {
       <div className="text-center py-12 space-y-4">
         <div className="text-red-500">{error}</div>
         <button
-          onClick={() => checkSessionAndRefresh(true)}
+          onClick={() => fetchDataRef.current()}
           className="px-4 py-2 bg-dark-grey/20 rounded-lg hover:bg-dark-grey/40 transition-colors"
         >
           Try Again
@@ -593,20 +557,20 @@ export default function ProductsTable() {
           <div className="flex items-center justify-between px-4 py-3 border-t border-dark-grey">
             <div className="flex items-center gap-2">
               <span className="text-sm text-text-grey">
-                Page {currentPage} of {totalPages}
+                Page {currentPageRef.current} of {totalPages}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1 || isLoading}
+                onClick={() => handlePageChange(currentPageRef.current - 1)}
+                disabled={currentPageRef.current === 1 || isLoading}
                 variant="outline"
               >
                 Previous
               </Button>
               <Button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages || isLoading}
+                onClick={() => handlePageChange(currentPageRef.current + 1)}
+                disabled={currentPageRef.current === totalPages || isLoading}
                 variant="outline"
               >
                 Next
