@@ -1,22 +1,37 @@
-import React, { createContext, useContext } from 'react';
-import { User } from '@supabase/supabase-js';
-import { UserProfile } from '../types/auth';
-import { useAuth } from '../hooks/useAuth';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Session, User } from '@supabase/supabase-js';
+import { useSession } from '../hooks/useSession';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
+  session: Session | null;
   user: User | null;
-  profile: UserProfile | null;
   loading: boolean;
-  error: Error | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const auth = useAuth();
+  const { session, loading } = useSession();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    setUser(session?.user ?? null);
+  }, [session]);
+
+  // Set up auth state listener
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={{ session, user, loading }}>
       {children}
     </AuthContext.Provider>
   );
