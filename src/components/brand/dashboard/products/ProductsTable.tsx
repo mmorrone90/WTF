@@ -345,6 +345,25 @@ export default function ProductsTable() {
     }
   };
 
+  const renderSizes = (sizes: string[] | string | undefined | null) => {
+    if (!sizes) return '-';
+    
+    const sizeArray = Array.isArray(sizes) ? sizes : sizes.split(',').map(s => s.trim());
+    
+    return (
+      <div className="flex flex-wrap gap-1">
+        {sizeArray.map((size, index) => (
+          <span 
+            key={index}
+            className="px-2 py-0.5 bg-dark-grey/50 rounded text-sm"
+          >
+            {size}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -434,8 +453,8 @@ export default function ProductsTable() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="flex justify-between items-center mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center gap-2">
           <button 
             onClick={exportToCsv}
@@ -458,12 +477,12 @@ export default function ProductsTable() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 text-red-500 px-4 py-2 rounded-lg">
+        <div className="bg-red-500/10 text-red-500 px-4 py-2 rounded-lg animate-in fade-in duration-300">
           {error}
         </div>
       )}
 
-      <div className="bg-dark-grey/20 rounded-xl overflow-hidden relative">
+      <div className="bg-dark-grey/20 rounded-xl overflow-hidden relative animate-in fade-in slide-in-from-bottom-12 duration-1000">
         {isOperationLoading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neon-yellow"></div>
@@ -472,15 +491,15 @@ export default function ProductsTable() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Product</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Size</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Stock</TableHead>
-              <TableHead>Product URL</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="w-24">Product</TableHead>
+              <TableHead className="w-48">Title</TableHead>
+              <TableHead className="w-32">Category</TableHead>
+              <TableHead className="w-64">Description</TableHead>
+              <TableHead className="w-40">Sizes</TableHead>
+              <TableHead className="w-24">Price</TableHead>
+              <TableHead className="w-20">Stock</TableHead>
+              <TableHead className="w-48">Product URL</TableHead>
+              <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -490,7 +509,7 @@ export default function ProductsTable() {
               
               return (
                 <TableRow key={product.id}>
-                  <TableCell>
+                  <TableCell className="w-24">
                     {product.product_images?.[0]?.image_url ? (
                       <img 
                         src={product.product_images[0].image_url} 
@@ -503,24 +522,30 @@ export default function ProductsTable() {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>{categories.join(', ') || '-'}</TableCell>
-                  <TableCell className="max-w-xs truncate">{product.description || '-'}</TableCell>
-                  <TableCell>{product.size || '-'}</TableCell>
-                  <TableCell>
+                  <TableCell className="w-48 font-medium">
+                    <div className="line-clamp-2">{product.name}</div>
+                  </TableCell>
+                  <TableCell className="w-32">
+                    <div className="line-clamp-2">{categories.join(', ') || '-'}</div>
+                  </TableCell>
+                  <TableCell className="w-64">
+                    <div className="line-clamp-2">{product.description || '-'}</div>
+                  </TableCell>
+                  <TableCell className="w-40">{renderSizes(product.size)}</TableCell>
+                  <TableCell className="w-24">
                     <div className="flex items-center gap-1">
                       {currencySymbol}
                       {product.price.toFixed(2)}
                     </div>
                   </TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell className="max-w-xs truncate">
+                  <TableCell className="w-20">{product.stock}</TableCell>
+                  <TableCell className="w-48">
                     {product.product_url ? (
                       <a 
                         href={product.product_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-neon-yellow hover:underline"
+                        className="text-neon-yellow hover:underline line-clamp-1"
                       >
                         {product.product_url}
                       </a>
