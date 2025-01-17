@@ -11,7 +11,23 @@ import {
 } from '../../../../utils/product-categories';
 import { useAuthContext } from '../../../../contexts/AuthContext';
 
-interface ProductFormData {
+export const isFormValid = (data: {
+  title: string;
+  category: string;
+  size: string[];
+  images: string[];
+  price: number;
+}): boolean => {
+  return Boolean(
+    data.title && // Title is required
+    data.category && // Category is required
+    data.size.length > 0 && // At least one size must be selected
+    data.price > 0 && // Price must be positive
+    data.images.length > 0 // At least one image is required
+  );
+};
+
+export interface ProductFormData {
   title: string;
   category: string;
   description: string;
@@ -34,17 +50,6 @@ interface ProductFormProps {
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY'];
 const QUICK_PRICES = [19.99, 29.99, 39.99, 49.99, 59.99, 79.99, 99.99];
 const QUICK_STOCKS = [5, 10, 20, 50, 100];
-
-const isFormValid = (data: ProductFormData): boolean => {
-  return Boolean(
-    data.title && // Title is required
-    data.category && // Category is required
-    data.size.length > 0 && // At least one size must be selected
-    data.price > 0 && // Price must be positive
-    data.stock >= 0 && // Stock must be non-negative
-    data.images.length > 0 // At least one image is required
-  );
-};
 
 export default function ProductForm({ initialData, onSubmit, onClose, isLoading = false }: ProductFormProps) {
   const { user } = useAuthContext();

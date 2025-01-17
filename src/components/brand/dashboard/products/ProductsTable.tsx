@@ -48,7 +48,11 @@ const currencies = [
   { symbol: <Coins className="w-4 h-4" />, code: 'JPY' }
 ];
 
-export default function ProductsTable() {
+interface ProductsTableProps {
+  onImportClick: () => void;
+}
+
+export default function ProductsTable({ onImportClick }: ProductsTableProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
@@ -65,7 +69,8 @@ export default function ProductsTable() {
   const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
   const SESSION_CHECK_INTERVAL = 60 * 1000; // 1 minute
 
-  const fetchDataRef = useRef(async () => {
+  // Expose refresh function
+  const refreshData = useCallback(async () => {
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -98,7 +103,7 @@ export default function ProductsTable() {
     } finally {
       setIsLoading(false);
     }
-  });
+  }, [navigate]);
 
   // Combined effect for data fetching
   useEffect(() => {
@@ -108,21 +113,21 @@ export default function ProductsTable() {
     // Only fetch if it's not the initial mount or if it's the first time
     if (!mountedRef.current) {
       mountedRef.current = true;
-      fetchDataRef.current();
+      refreshData();
     } else if (searchParams.get('page')) {
-      fetchDataRef.current();
+      refreshData();
     }
 
     // Set up periodic refresh
     const intervalId = setInterval(() => {
       const now = Date.now();
       if (now - lastRefreshTimeRef.current >= REFRESH_INTERVAL) {
-        fetchDataRef.current();
+        refreshData();
       }
     }, SESSION_CHECK_INTERVAL);
 
     return () => clearInterval(intervalId);
-  }, [navigate, searchParams]);
+  }, [navigate, searchParams, refreshData]);
 
   const handlePageChange = (newPage: number) => {
     setSearchParams({ page: newPage.toString() });
@@ -252,99 +257,6 @@ export default function ProductsTable() {
     URL.revokeObjectURL(url);
   };
 
-  const handleImportClick = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
-    input.onchange = async (e: Event) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const csvText = event.target?.result as string;
-        try {
-          await processCsvData(csvText);
-        } catch (err) {
-          console.error('Error processing CSV data:', err);
-          setError('Failed to process CSV data');
-        }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
-  };
-
-  const processCsvData = async (csvText: string) => {
-    const rows = csvText.split('\n').filter(row => row.trim() !== '');
-    if (rows.length <= 1) {
-      alert('No data found in CSV file');
-      return;
-    }
-
-    const headers = rows[0].split(',').map(header => header.trim());
-    const dataRows = rows.slice(1);
-
-    const newProducts = dataRows.map(row => {
-      const values = row.split(',').map(value => value.trim());
-      const product: Partial<Product> = {};
-
-      headers.forEach((header, index) => {
-        if (header === 'Title') product.name = values[index];
-        if (header === 'Category') product.tags = values[index].split(',').map(tag => tag.trim());
-        if (header === 'Description') product.description = values[index];
-        if (header === 'Size') product.size = values[index].split(',').map(size => size.trim());
-        if (header === 'Price') product.price = parseFloat(values[index].replace('$', '').trim());
-        if (header === 'Stock') product.stock = parseInt(values[index]);
-        if (header === 'Product URL') product.product_url = values[index];
-      });
-      return product as Product;
-    });
-
-    // Confirm with user before importing
-    if (window.confirm(`Import ${newProducts.length} products?`)) {
-      try {
-        setIsOperationLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          navigate('/brand/login');
-          return;
-        }
-
-        // Create new products
-        for (const product of newProducts) {
-          await createProduct({
-            title: product.name || '',
-            category: product.tags?.[0] || '',
-            description: product.description || '',
-            size: product.size || [],
-            price: product.price || 0,
-            currency: product.currency || 'USD',
-            stock: product.stock || 0,
-            metadata: { product_url: product.product_url || '' },
-            tags: product.tags || []
-          });
-        }
-
-        // Reload current page
-        const { products: brandProducts, total } = await getProducts({ 
-          partnerId: session.user.id,
-          page: currentPageRef.current,
-          limit: PRODUCTS_PER_PAGE
-        });
-        
-        setProducts(brandProducts);
-        setTotalProducts(total);
-        setError(null);
-      } catch (err) {
-        console.error('Error importing products:', err);
-        setError('Failed to import products');
-      } finally {
-        setIsOperationLoading(false);
-      }
-    }
-  };
-
   const renderSizes = (sizes: string[] | string | undefined | null) => {
     if (!sizes) return '-';
     
@@ -382,7 +294,7 @@ export default function ProductsTable() {
       <div className="text-center py-12 space-y-4">
         <div className="text-red-500">{error}</div>
         <button
-          onClick={() => fetchDataRef.current()}
+          onClick={() => refreshData()}
           className="px-4 py-2 bg-dark-grey/20 rounded-lg hover:bg-dark-grey/40 transition-colors"
         >
           Try Again
@@ -452,17 +364,22 @@ export default function ProductsTable() {
     setIsFormOpen(true);
   };
 
+  const handleImportClick = () => {
+    onImportClick();
+    // Set up a listener for storage events to detect when import is complete
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === 'import_complete') {
+        refreshData();
+        window.removeEventListener('storage', handleStorageEvent);
+      }
+    };
+    window.addEventListener('storage', handleStorageEvent);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div className="flex justify-between items-center mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center gap-2">
-          <button 
-            onClick={exportToCsv}
-            className="bg-dark-grey/50 rounded-lg px-3 py-2 text-text-grey hover:text-white transition-colors flex items-center gap-1.5"
-          >
-            <ArrowUp className="w-4 h-4" />
-            Export
-          </button>
           <button 
             onClick={handleImportClick}
             className="bg-dark-grey/50 rounded-lg px-3 py-2 text-text-grey hover:text-white transition-colors flex items-center gap-1.5"
@@ -470,8 +387,16 @@ export default function ProductsTable() {
             <ArrowDown className="w-4 h-4" />
             Import
           </button>
+          <button 
+            onClick={exportToCsv}
+            className="bg-dark-grey/50 rounded-lg px-3 py-2 text-text-grey hover:text-white transition-colors flex items-center gap-1.5"
+          >
+            <ArrowUp className="w-4 h-4" />
+            Export
+          </button>
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
+        <Button onClick={() => setIsFormOpen(true)} className="flex items-center">
+          <Plus className="w-4 h-4 mr-2 shrink-0" />
           Add Product
         </Button>
       </div>
