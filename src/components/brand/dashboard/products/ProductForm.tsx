@@ -116,7 +116,7 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
     setSelectedCategory(category);
     setFormData(prev => ({
       ...prev,
-      category: category.id,
+      category: category.label,
       size: [] // Reset size when category changes
     }));
   };

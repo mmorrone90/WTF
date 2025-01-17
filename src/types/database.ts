@@ -8,6 +8,7 @@ export interface Product {
   stock: number;
   metadata?: Record<string, any>;
   tags?: string[];
+  category?: string;
   partner_id: string;
   created_at: string;
   gender?: 'male' | 'female' | 'unisex';

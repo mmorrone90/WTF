@@ -44,6 +44,7 @@ function transformProduct(
     price: dbProduct.price || 0,
     stock: dbProduct.stock || 0,
     tags: dbProduct.tags || [],
+    category: dbProduct.category || '',
     metadata: dbProduct.metadata || {},
     brand: dbProduct.partners?.business_name || 'Unknown Brand',
     image: primaryImage?.image_url || firstImage?.image_url || defaultImage,
@@ -91,6 +92,7 @@ export async function createProduct(data: ProductData): Promise<Product> {
         stock: data.stock,
         metadata: cleanMetadata,
         tags: data.tags || [],
+        category: data.category,
         partner_id: session.session.user.id,
         created_at: new Date().toISOString(),
         product_url: customUrl
@@ -183,6 +185,7 @@ export async function updateProduct(id: string, data: ProductData): Promise<Prod
         stock: data.stock,
         metadata: cleanMetadata,
         tags: data.tags || [],
+        category: data.category,
         product_url: customUrl
       })
       .eq('id', id)
@@ -274,6 +277,7 @@ export async function getProducts({
         stock,
         size,
         tags,
+        category,
         created_at,
         product_url,
         product_images (
@@ -340,6 +344,7 @@ export async function getProduct(id: string) {
       .from('products')
       .select(`
         *,
+        category,
         product_images (
           id,
           image_url,

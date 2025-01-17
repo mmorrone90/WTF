@@ -231,11 +231,10 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
     csvRows.push(headers.join(','));
 
     products.forEach(product => {
-      const categories = Array.isArray(product.tags) ? product.tags.join(', ') : product.tags || '-';
       const row = [
         product.product_images?.[0]?.image_url || 'No Image',
         product.name,
-        categories,
+        product.category || '-',
         product.description || '-',
         product.size || '-',
         `$${product.price.toFixed(2)} ${product.currency}`,
@@ -338,24 +337,21 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
   }
 
   const handleEditProduct = (product: Product) => {
-    // Extract category and gender from tags
+    // Extract gender from tags
     const tags = Array.isArray(product.tags) ? product.tags : [];
     const gender = product.gender || 'unisex';
     
-    // Find the first tag that's not the gender as the category
-    const category = tags.find(tag => tag !== gender) || '';
-
     const formData: Partial<ProductFormData> & { id: string } = {
       id: product.id,
       title: product.name,
-      category: category,
+      category: product.category || '',
       description: product.description || '',
       size: product.size || [],
       images: product.product_images?.map(img => img.image_url) || [],
       price: product.price,
       currency: product.currency,
       metadata: product.metadata || {},
-      tags: tags.filter(tag => tag !== gender && tag !== category),
+      tags: tags.filter(tag => tag !== gender),
       stock: product.stock,
       gender: gender
     };
@@ -430,7 +426,6 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
           <TableBody>
             {products.map((product) => {
               const currencySymbol = currencies.find(c => c.code === product.currency)?.symbol;
-              const categories = Array.isArray(product.tags) ? product.tags : [];
               
               return (
                 <TableRow key={product.id}>
@@ -451,7 +446,7 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
                     <div className="line-clamp-2">{product.name}</div>
                   </TableCell>
                   <TableCell className="w-32">
-                    <div className="line-clamp-2">{categories.join(', ') || '-'}</div>
+                    <div className="line-clamp-2">{product.category || '-'}</div>
                   </TableCell>
                   <TableCell className="w-64">
                     <div className="line-clamp-2">{product.description || '-'}</div>
