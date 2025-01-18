@@ -78,6 +78,7 @@ import React from 'react';
               <Route path="all-products" element={<Shop view="all-products" />} />
               <Route path="best-sellers" element={<Shop view="best-sellers" />} />
               <Route path="new-arrivals" element={<Shop view="new-arrivals" />} />
+              <Route path="brand/:partnerId" element={<Shop />} />
             </Route>
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
