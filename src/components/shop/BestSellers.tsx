@@ -1,74 +1,59 @@
 import React from 'react';
-import ProductCard from '../ProductCard';
-import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Product } from '../../types/product';
-import { BestSellersSkeleton } from '../ui/Shimmer';
+import ProductCard from '../ProductCard';
 
 interface BestSellersProps {
   products: Product[];
-  isLoading: boolean;
-  error: Error | null;
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-export default function BestSellers({ products, isLoading, error }: BestSellersProps) {
-  // Get the first 4 products as best sellers (we can add a proper flag later)
-  const bestSellers = products.slice(0, 4);
-
-  if (isLoading) {
-    return <BestSellersSkeleton />;
-  }
-
-  if (error || bestSellers.length === 0) {
+export default function BestSellers({ 
+  products, 
+  isLoading = false,
+  error = null 
+}: BestSellersProps) {
+  if (error) {
     return (
-      <section className="py-20 bg-dark-grey/20">
-        <div className="max-w-container mx-auto px-6">
-          <div className="flex items-center justify-center h-[400px] text-text-grey">
-            {error ? error.message : 'No products available'}
-          </div>
-        </div>
-      </section>
+      <div className="text-center py-8">
+        <p className="text-red-500">Error: {error.message}</p>
+      </div>
     );
   }
 
   return (
-    <section className="py-20 bg-dark-grey/20">
-      <div className="max-w-container mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
-          <h2 className="text-5xl font-bold mb-4 md:mb-0">
-            <span className="text-white">OUR BEST</span>{' '}
-            <span className="text-text-grey">SELLERS</span>
-          </h2>
-          <p className="text-text-grey max-w-md text-lg">
-            Explore our collection, where style meets comfort in trendy quality fabrics.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {bestSellers.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              viewport={{ once: true }}
-            >
-              <ProductCard
-                id={product.id}
-                name={product.name}
-                brand={product.brand}
-                image={product.image}
-                price={product.price}
-                currency={product.currency}
-                originalPrice={product.originalPrice}
-                rating={product.rating}
-                partnerUrl={product.partnerUrl}
-                product_url={product.product_url}
-                variant="detailed"
-              />
-            </motion.div>
-          ))}
-        </div>
+    <div>
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-bold">Best Sellers</h2>
+        <Link 
+          to="/shop/best-sellers"
+          className="flex items-center gap-2 text-neon-yellow hover:text-neon-yellow/80 transition-colors"
+        >
+          View All
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
-    </section>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        {products.map((product) => (
+          <ProductCard 
+            key={product.id} 
+            product={product}
+            variant="simple"
+          />
+        ))}
+        {isLoading && (
+          Array(4).fill(0).map((_, index) => (
+            <div key={index} className="animate-pulse">
+              <div className="bg-white/5 rounded-xl aspect-square mb-4" />
+              <div className="bg-white/5 h-4 rounded mb-2 w-3/4" />
+              <div className="bg-white/5 h-4 rounded w-1/4" />
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 }

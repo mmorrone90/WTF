@@ -24,6 +24,7 @@ interface GetProductsOptions {
   includeOutOfStock?: boolean;
   partnerId?: string;
   includeAllStatuses?: boolean;
+  sort?: 'sales' | 'created_at';
 }
 
 // Transform database product to UI product
@@ -262,7 +263,8 @@ export async function getProducts({
   category,
   includeOutOfStock = false,
   partnerId,
-  includeAllStatuses = false
+  includeAllStatuses = false,
+  sort
 }: GetProductsOptions = {}): Promise<{ products: Product[], total: number }> {
   try {
     let query = supabase
@@ -295,6 +297,11 @@ export async function getProducts({
     } else if (!includeAllStatuses) {
       // Only show active products for public viewing
       query = query.eq('status', 'active');
+    }
+
+    // Apply sorting
+    if (sort === 'sales' || sort === 'created_at') {
+      query = query.order('created_at', { ascending: false });
     }
 
     // Add pagination

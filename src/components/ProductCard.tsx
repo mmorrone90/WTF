@@ -3,40 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, ImageIcon, Tag } from 'lucide-react';
 import Card from './ui/Card';
 import Button from './ui/Button';
+import { Product } from '../types/product';
 
 interface ProductCardProps {
-  id: string;
-  name: string;
-  brand?: string;
-  image: string;
-  price: number;
-  currency: string;
-  originalPrice?: number;
-  rating?: number;
-  partnerUrl?: string;
-  product_url?: string;
-  discount?: string;
-  sold?: string;
+  product: Product;
   variant?: 'simple' | 'detailed';
 }
 
-export default function ProductCard({
-  id,
-  name,
-  brand,
-  image,
-  price,
-  currency = 'USD',
-  originalPrice,
-  rating = 5,
-  partnerUrl,
-  product_url,
-  discount,
-  sold,
-  variant = 'detailed'
+export default function ProductCard({ 
+  product,
+  variant = 'detailed' 
 }: ProductCardProps) {
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
+
+  const {
+    id,
+    name,
+    brand,
+    image,
+    price,
+    currency = 'USD',
+    originalPrice,
+    rating = 5,
+    partnerUrl,
+    product_url,
+    discount,
+    sold
+  } = product;
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -142,7 +136,7 @@ export default function ProductCard({
           </div>
         )}
       </div>
-
+      
       {/* Product Info */}
       <div className="space-y-2">
         <h3 className="text-lg font-bold">{name}</h3>

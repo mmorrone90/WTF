@@ -1,51 +1,57 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import ProductCard from '../ProductCard';
 import { Product } from '../../types/product';
+import ProductCard from '../ProductCard';
 
 interface ProductGridProps {
   products: Product[];
-  isLoading: boolean;
+  isLoading?: boolean;
+  error?: Error | null;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export default function ProductGrid({ products, isLoading }: ProductGridProps) {
-  if (isLoading) {
+export default function ProductGrid({ 
+  products, 
+  isLoading = false,
+  error = null,
+  hasMore = false,
+  onLoadMore 
+}: ProductGridProps) {
+  if (error) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="space-y-4">
-            <div className="aspect-square bg-dark-grey rounded-xl" />
-            <div className="h-4 bg-dark-grey rounded w-2/3" />
-            <div className="h-4 bg-dark-grey rounded w-1/3" />
-          </div>
-        ))}
+      <div className="text-center py-8">
+        <p className="text-red-500">Error: {error.message}</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {products.map((product, index) => (
-        <motion.div
-          key={product.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
-        >
-          <ProductCard
-            id={product.id}
-            name={product.name}
-            brand={product.brand}
-            image={product.image}
-            price={product.price}
-            currency={product.currency || 'USD'}
-            originalPrice={product.originalPrice}
-            partnerUrl={product.partnerUrl}
-            product_url={product.product_url}
-            variant="detailed"
-          />
-        </motion.div>
-      ))}
+    <div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+        {isLoading && (
+          Array(4).fill(0).map((_, index) => (
+            <div key={index} className="animate-pulse">
+              <div className="bg-white/5 rounded-xl aspect-[3/4] mb-4" />
+              <div className="bg-white/5 h-4 rounded mb-2 w-3/4" />
+              <div className="bg-white/5 h-4 rounded w-1/4" />
+            </div>
+          ))
+        )}
+      </div>
+      
+      {hasMore && !isLoading && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={onLoadMore}
+            className="px-6 py-2 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+          >
+            Load More
+          </button>
+        </div>
+      )}
     </div>
   );
 }

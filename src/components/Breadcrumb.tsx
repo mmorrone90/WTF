@@ -14,9 +14,10 @@ interface SpecialSections {
 }
 
 const SPECIAL_SECTIONS: SpecialSections = {
-  shop: [
+  'shop': [
     { name: 'All Products', path: '/shop/all-products' },
     { name: 'Best Sellers', path: '/shop/best-sellers' },
+    { name: 'New Arrivals', path: '/shop/new-arrivals' }
   ]
 };
 
@@ -75,7 +76,7 @@ export default function Breadcrumb() {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' '),
       path: `/${pathnames.slice(0, pathnames.indexOf(path) + 1).join('/')}`,
-      hasDropdown: SPECIAL_SECTIONS.hasOwnProperty(path.toLowerCase())
+      hasDropdown: SPECIAL_SECTIONS.hasOwnProperty(path)
     }));
   }
 
@@ -95,51 +96,44 @@ export default function Breadcrumb() {
         {breadcrumbItems.map((item, index) => (
           <li key={item.path} className="flex items-center gap-1.5">
             <ChevronRight className="w-3.5 h-3.5 text-text-grey/40" />
-            {index === breadcrumbItems.length - 1 ? (
-              <div className="relative group">
-                <button 
-                  className={`flex items-center gap-1 ${item.hasDropdown ? 'cursor-pointer' : ''} ${
-                    activeDropdown === item.path 
-                      ? 'text-neon-yellow' 
-                      : 'text-neon-yellow font-medium'
-                  }`}
-                  onClick={() => {
-                    if (item.hasDropdown) {
-                      setActiveDropdown(activeDropdown === item.path ? null : item.path);
-                    }
-                  }}
-                >
-                  {item.name}
-                  {item.hasDropdown && (
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${
-                      activeDropdown === item.path ? 'rotate-180' : ''
-                    }`} />
-                  )}
-                </button>
-                
-                {item.hasDropdown && activeDropdown === item.path && (
-                  <div className="absolute top-full left-0 mt-1 py-1 bg-black/95 backdrop-blur-sm border border-white/10 rounded-lg min-w-[120px] z-50">
-                    {SPECIAL_SECTIONS[item.path.slice(1).toLowerCase()]?.map((subItem: SubRoute) => (
-                      <Link
-                        key={subItem.path}
-                        to={subItem.path}
-                        className="block px-3 py-1.5 text-text-grey/70 hover:text-neon-yellow hover:bg-white/5 transition-colors"
-                        onClick={() => setActiveDropdown(null)}
-                      >
-                        {subItem.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link 
-                to={item.path}
-                className="text-text-grey/70 hover:text-neon-yellow transition-colors"
+            <div className="relative group">
+              <button 
+                className={`flex items-center gap-1 ${item.hasDropdown ? 'cursor-pointer' : ''} ${
+                  activeDropdown === item.path 
+                    ? 'text-neon-yellow' 
+                    : index === breadcrumbItems.length - 1 
+                      ? 'text-neon-yellow font-medium'
+                      : 'text-text-grey/70 hover:text-neon-yellow transition-colors'
+                }`}
+                onClick={() => {
+                  if (item.hasDropdown) {
+                    setActiveDropdown(activeDropdown === item.path ? null : item.path);
+                  }
+                }}
               >
                 {item.name}
-              </Link>
-            )}
+                {item.hasDropdown && (
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${
+                    activeDropdown === item.path ? 'rotate-180' : ''
+                  }`} />
+                )}
+              </button>
+              
+              {item.hasDropdown && activeDropdown === item.path && (
+                <div className="absolute top-full left-0 mt-1 py-1 bg-black/95 backdrop-blur-sm border border-white/10 rounded-lg min-w-[120px] z-50">
+                  {SPECIAL_SECTIONS[item.name.toLowerCase()]?.map((subItem: SubRoute) => (
+                    <Link
+                      key={subItem.path}
+                      to={subItem.path}
+                      className="block px-3 py-1.5 text-text-grey/70 hover:text-neon-yellow hover:bg-white/5 transition-colors"
+                      onClick={() => setActiveDropdown(null)}
+                    >
+                      {subItem.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </li>
         ))}
       </ol>

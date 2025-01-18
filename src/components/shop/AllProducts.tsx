@@ -1,22 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Menu } from 'lucide-react';
 import FilterSidebar from './FilterSidebar';
 import ProductGrid from './ProductGrid';
-import { useProducts } from '../../hooks/useProducts';
 import { Product } from '../../types/product';
 
 interface AllProductsProps {
   initialProducts?: Product[];
+  isLoading?: boolean;
+  error?: Error | null;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export default function AllProducts({ initialProducts = [] }: AllProductsProps) {
+export default function AllProducts({ 
+  initialProducts = [], 
+  isLoading = false, 
+  error = null,
+  hasMore = false,
+  onLoadMore
+}: AllProductsProps) {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-
-  const { products, isLoading, error } = useProducts({
-    category: selectedCategory,
-    includeOutOfStock: false
-  });
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category === selectedCategory ? '' : category);
@@ -63,7 +67,13 @@ export default function AllProducts({ initialProducts = [] }: AllProductsProps) 
 
         {/* Product Grid */}
         <div className="flex-1">
-          <ProductGrid products={products} isLoading={isLoading} />
+          <ProductGrid 
+            products={initialProducts} 
+            isLoading={isLoading} 
+            error={error}
+            hasMore={hasMore}
+            onLoadMore={onLoadMore}
+          />
         </div>
       </div>
     </div>

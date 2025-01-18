@@ -75,8 +75,9 @@ import React from 'react';
             <Route path="discover" element={<Discover />} />
             <Route path="shop">
               <Route index element={<Shop />} />
-              <Route path="all-products" element={<Shop />} />
-              <Route path="best-sellers" element={<Shop />} />
+              <Route path="all-products" element={<Shop view="all-products" />} />
+              <Route path="best-sellers" element={<Shop view="best-sellers" />} />
+              <Route path="new-arrivals" element={<Shop view="new-arrivals" />} />
             </Route>
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
