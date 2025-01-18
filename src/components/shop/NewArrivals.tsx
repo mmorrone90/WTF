@@ -26,6 +26,7 @@ export default function NewArrivals() {
       originalPrice={product.originalPrice}
       rating={product.rating}
       partnerUrl={product.partnerUrl}
+      product_url={product.product_url}
       discount={product.discount}
       sold={product.sold}
       variant="simple"

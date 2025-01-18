@@ -14,6 +14,7 @@ interface ProductCardProps {
   originalPrice?: number;
   rating?: number;
   partnerUrl?: string;
+  product_url?: string;
   discount?: string;
   sold?: string;
   variant?: 'simple' | 'detailed';
@@ -29,6 +30,7 @@ export default function ProductCard({
   originalPrice,
   rating = 5,
   partnerUrl,
+  product_url,
   discount,
   sold,
   variant = 'detailed'
@@ -38,7 +40,7 @@ export default function ProductCard({
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (partnerUrl) {
+    if (product_url || partnerUrl) {
       // Track click event
       if (window.gtag) {
         window.gtag('event', 'click', {
@@ -47,7 +49,7 @@ export default function ProductCard({
           value: price
         });
       }
-      window.open(partnerUrl, '_blank');
+      window.open(product_url || partnerUrl, '_blank');
     }
   };
 
@@ -166,7 +168,7 @@ export default function ProductCard({
         </div>
 
         {/* Buy Now Button */}
-        {partnerUrl && (
+        {(product_url || partnerUrl) && (
           <Button 
             onClick={handleBuyNow} 
             className="w-full flex items-center justify-center gap-2"

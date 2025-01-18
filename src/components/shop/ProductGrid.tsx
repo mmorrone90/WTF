@@ -38,8 +38,10 @@ export default function ProductGrid({ products, isLoading }: ProductGridProps) {
             brand={product.brand}
             image={product.image}
             price={product.price}
+            currency={product.currency || 'USD'}
             originalPrice={product.originalPrice}
             partnerUrl={product.partnerUrl}
+            product_url={product.product_url}
             variant="detailed"
           />
         </motion.div>

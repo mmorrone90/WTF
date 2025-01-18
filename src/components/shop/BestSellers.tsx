@@ -62,6 +62,7 @@ export default function BestSellers({ products, isLoading, error }: BestSellersP
                 originalPrice={product.originalPrice}
                 rating={product.rating}
                 partnerUrl={product.partnerUrl}
+                product_url={product.product_url}
                 variant="detailed"
               />
             </motion.div>
