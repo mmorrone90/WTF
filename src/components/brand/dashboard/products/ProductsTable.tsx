@@ -555,41 +555,41 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-24">Product</TableHead>
-              <TableHead className="w-48">
+              <TableHead className="w-[10%]">Product</TableHead>
+              <TableHead className="w-[15%]">
                 <div className="flex items-center">
                   Title
                   <FilterMenu column="title" />
                 </div>
               </TableHead>
-              <TableHead className="w-32">
+              <TableHead className="w-[10%]">
                 <div className="flex items-center">
                   Category
                   <FilterMenu column="category" />
                 </div>
               </TableHead>
-              <TableHead className="w-64">Description</TableHead>
-              <TableHead className="w-40">Sizes</TableHead>
-              <TableHead className="w-24">
+              <TableHead className="w-[20%]">Description</TableHead>
+              <TableHead className="w-[10%]">Sizes</TableHead>
+              <TableHead className="w-[8%]">
                 <div className="flex items-center">
                   Price
                   <FilterMenu column="price" />
                 </div>
               </TableHead>
-              <TableHead className="w-20">
+              <TableHead className="w-[7%]">
                 <div className="flex items-center">
                   Stock
                   <FilterMenu column="stock" />
                 </div>
               </TableHead>
-              <TableHead className="w-24">
+              <TableHead className="w-[8%]">
                 <div className="flex items-center">
                   Status
                   <FilterMenu column="status" />
                 </div>
               </TableHead>
-              <TableHead className="w-48">Product URL</TableHead>
-              <TableHead className="w-24">Actions</TableHead>
+              <TableHead className="w-[15%]">Product URL</TableHead>
+              <TableHead className="w-[7%]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -598,7 +598,7 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
               
               return (
                 <TableRow key={product.id}>
-                  <TableCell className="w-24">
+                  <TableCell className="w-[10%]">
                     {product.product_images?.[0]?.image_url ? (
                       <img 
                         src={product.product_images[0].image_url} 
@@ -611,24 +611,24 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="w-48 font-medium">
+                  <TableCell className="w-[15%] font-medium">
                     <div className="line-clamp-2">{product.name}</div>
                   </TableCell>
-                  <TableCell className="w-32">
+                  <TableCell className="w-[10%]">
                     <div className="line-clamp-2">{product.category || '-'}</div>
                   </TableCell>
-                  <TableCell className="w-64">
+                  <TableCell className="w-[20%]">
                     <div className="line-clamp-2">{product.description || '-'}</div>
                   </TableCell>
-                  <TableCell className="w-40">{renderSizes(product.size)}</TableCell>
-                  <TableCell className="w-24">
+                  <TableCell className="w-[10%]">{renderSizes(product.size)}</TableCell>
+                  <TableCell className="w-[8%]">
                     <div className="flex items-center gap-1">
                       {currencySymbol}
                       {product.price.toFixed(2)}
                     </div>
                   </TableCell>
-                  <TableCell className="w-20">{product.stock}</TableCell>
-                  <TableCell className="w-24">
+                  <TableCell className="w-[7%]">{product.stock}</TableCell>
+                  <TableCell className="w-[8%]">
                     <span className={`px-2 py-1 rounded-lg text-sm ${
                       product.status === 'active' 
                         ? 'bg-green-500/20 text-green-500' 
@@ -637,7 +637,7 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
                       {product.status || 'draft'}
                     </span>
                   </TableCell>
-                  <TableCell className="w-48">
+                  <TableCell className="w-[15%]">
                     {product.product_url ? (
                       <a 
                         href={product.product_url} 
@@ -649,7 +649,7 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
                       </a>
                     ) : '-'}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="w-[7%]">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleEditProduct(product)}
