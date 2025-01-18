@@ -54,6 +54,7 @@ export interface Profile {
   id: string;
   email: string;
   user_type: string;
+  business_name?: string;
   created_at?: string;
   updated_at?: string;
 } 
