@@ -38,6 +38,7 @@ export interface ProductFormData {
   metadata: Record<string, string>;
   tags: string[];
   stock: number;
+  status: 'active' | 'draft';
 }
 
 interface ProductFormProps {
@@ -63,7 +64,8 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
     currency: initialData?.currency || 'USD',
     metadata: initialData?.metadata || {},
     tags: initialData?.tags || [],
-    stock: initialData?.stock || 0
+    stock: initialData?.stock || 0,
+    status: initialData?.status || 'draft'
   });
   const [partnerWebsite, setPartnerWebsite] = useState<string>('');
   const [isUrlEditable, setIsUrlEditable] = useState(false);
@@ -503,20 +505,34 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
 
           {/* Basic Information */}
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Title *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={e => {
-                  setFormData(prev => ({ ...prev, title: e.target.value }));
-                  if (!isUrlEditable) {
-                    setCustomUrl('');
-                  }
-                }}
-                className="w-full bg-black/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-neon-yellow"
-                required
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Title *</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={e => {
+                    setFormData(prev => ({ ...prev, title: e.target.value }));
+                    if (!isUrlEditable) {
+                      setCustomUrl('');
+                    }
+                  }}
+                  className="w-full bg-black/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-neon-yellow"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status *</label>
+                <select
+                  value={formData.status}
+                  onChange={e => setFormData(prev => ({ ...prev, status: e.target.value as 'active' | 'draft' }))}
+                  className="w-full bg-black/20 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-neon-yellow"
+                  required
+                >
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                </select>
+              </div>
             </div>
 
             {/* Category Selection */}

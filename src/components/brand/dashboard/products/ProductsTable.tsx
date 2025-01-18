@@ -17,7 +17,9 @@ import {
   PoundSterling,
   Coins,
   ArrowDown,
-  ArrowUp
+  ArrowUp,
+  Filter,
+  Check
 } from 'lucide-react';
 import Button from '../../../ui/Button';
 import ProductForm from './ProductForm';
@@ -39,6 +41,7 @@ interface ProductFormData {
   tags: string[];
   stock: number;
   gender?: 'male' | 'female' | 'unisex';
+  status: 'active' | 'draft';
 }
 
 const currencies = [
@@ -50,6 +53,11 @@ const currencies = [
 
 interface ProductsTableProps {
   onImportClick: () => void;
+}
+
+interface SortConfig {
+  column: string;
+  direction: 'asc' | 'desc';
 }
 
 export default function ProductsTable({ onImportClick }: ProductsTableProps) {
@@ -68,6 +76,8 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
   const PRODUCTS_PER_PAGE = 10;
   const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
   const SESSION_CHECK_INTERVAL = 60 * 1000; // 1 minute
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
   // Expose refresh function
   const refreshData = useCallback(async () => {
@@ -155,7 +165,8 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
         metadata: formData.metadata,
         tags: formData.tags,
         stock: formData.stock,
-        images: formData.images
+        images: formData.images,
+        status: formData.status
       };
 
       if (selectedProduct?.id) {
@@ -275,6 +286,130 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
     );
   };
 
+  // Add sorting function
+  const sortProducts = (products: Product[]) => {
+    if (!sortConfig) return products;
+
+    return [...products].sort((a, b) => {
+      if (sortConfig.column === 'title') {
+        return sortConfig.direction === 'asc' 
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name);
+      }
+      if (sortConfig.column === 'category') {
+        const catA = a.category || '';
+        const catB = b.category || '';
+        return sortConfig.direction === 'asc'
+          ? catA.localeCompare(catB)
+          : catB.localeCompare(catA);
+      }
+      if (sortConfig.column === 'price') {
+        return sortConfig.direction === 'asc'
+          ? a.price - b.price
+          : b.price - a.price;
+      }
+      if (sortConfig.column === 'stock') {
+        return sortConfig.direction === 'asc'
+          ? a.stock - b.stock
+          : b.stock - a.stock;
+      }
+      return 0;
+    });
+  };
+
+  // Add filter menu component
+  const FilterMenu = ({ column }: { column: string }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSort = (direction: 'asc' | 'desc') => {
+      setSortConfig({ column, direction });
+      setIsOpen(false);
+    };
+
+    const isActive = sortConfig?.column === column;
+
+    return (
+      <div className="relative" ref={menuRef}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`ml-2 p-1 rounded-lg hover:bg-dark-grey/50 transition-colors ${isActive ? 'text-neon-yellow' : ''}`}
+        >
+          <Filter className="w-4 h-4" />
+        </button>
+        {isOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-dark-grey rounded-lg shadow-lg z-10">
+            <div className="py-1">
+              {(column === 'title' || column === 'category') && (
+                <>
+                  <button
+                    onClick={() => handleSort('asc')}
+                    className="flex items-center w-full px-4 py-2 hover:bg-black/20"
+                  >
+                    {sortConfig?.column === column && sortConfig?.direction === 'asc' && (
+                      <Check className="w-4 h-4 mr-2" />
+                    )}
+                    <span className={sortConfig?.column === column && sortConfig?.direction === 'asc' ? 'text-neon-yellow' : ''}>
+                      A-Z
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleSort('desc')}
+                    className="flex items-center w-full px-4 py-2 hover:bg-black/20"
+                  >
+                    {sortConfig?.column === column && sortConfig?.direction === 'desc' && (
+                      <Check className="w-4 h-4 mr-2" />
+                    )}
+                    <span className={sortConfig?.column === column && sortConfig?.direction === 'desc' ? 'text-neon-yellow' : ''}>
+                      Z-A
+                    </span>
+                  </button>
+                </>
+              )}
+              {(column === 'price' || column === 'stock') && (
+                <>
+                  <button
+                    onClick={() => handleSort('desc')}
+                    className="flex items-center w-full px-4 py-2 hover:bg-black/20"
+                  >
+                    {sortConfig?.column === column && sortConfig?.direction === 'desc' && (
+                      <Check className="w-4 h-4 mr-2" />
+                    )}
+                    <span className={sortConfig?.column === column && sortConfig?.direction === 'desc' ? 'text-neon-yellow' : ''}>
+                      Highest to Lowest
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleSort('asc')}
+                    className="flex items-center w-full px-4 py-2 hover:bg-black/20"
+                  >
+                    {sortConfig?.column === column && sortConfig?.direction === 'asc' && (
+                      <Check className="w-4 h-4 mr-2" />
+                    )}
+                    <span className={sortConfig?.column === column && sortConfig?.direction === 'asc' ? 'text-neon-yellow' : ''}>
+                      Lowest to Highest
+                    </span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -353,7 +488,8 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
       metadata: product.metadata || {},
       tags: tags.filter(tag => tag !== gender),
       stock: product.stock,
-      gender: gender
+      gender: gender,
+      status: product.status || 'draft'
     };
     
     setSelectedProduct(formData);
@@ -413,18 +549,39 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-24">Product</TableHead>
-              <TableHead className="w-48">Title</TableHead>
-              <TableHead className="w-32">Category</TableHead>
+              <TableHead className="w-48">
+                <div className="flex items-center">
+                  Title
+                  <FilterMenu column="title" />
+                </div>
+              </TableHead>
+              <TableHead className="w-32">
+                <div className="flex items-center">
+                  Category
+                  <FilterMenu column="category" />
+                </div>
+              </TableHead>
               <TableHead className="w-64">Description</TableHead>
               <TableHead className="w-40">Sizes</TableHead>
-              <TableHead className="w-24">Price</TableHead>
-              <TableHead className="w-20">Stock</TableHead>
+              <TableHead className="w-24">
+                <div className="flex items-center">
+                  Price
+                  <FilterMenu column="price" />
+                </div>
+              </TableHead>
+              <TableHead className="w-20">
+                <div className="flex items-center">
+                  Stock
+                  <FilterMenu column="stock" />
+                </div>
+              </TableHead>
+              <TableHead className="w-24">Status</TableHead>
               <TableHead className="w-48">Product URL</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => {
+            {sortProducts(products).map((product) => {
               const currencySymbol = currencies.find(c => c.code === product.currency)?.symbol;
               
               return (
@@ -459,6 +616,15 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
                     </div>
                   </TableCell>
                   <TableCell className="w-20">{product.stock}</TableCell>
+                  <TableCell className="w-24">
+                    <span className={`px-2 py-1 rounded-lg text-sm ${
+                      product.status === 'active' 
+                        ? 'bg-green-500/20 text-green-500' 
+                        : 'bg-yellow-500/20 text-yellow-500'
+                    }`}>
+                      {product.status || 'draft'}
+                    </span>
+                  </TableCell>
                   <TableCell className="w-48">
                     {product.product_url ? (
                       <a 

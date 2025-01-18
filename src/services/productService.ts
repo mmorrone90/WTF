@@ -14,6 +14,7 @@ export interface ProductData {
   tags?: string[];
   stock: number;
   images?: string[];
+  status: 'active' | 'draft';
 }
 
 interface GetProductsOptions {
@@ -22,6 +23,7 @@ interface GetProductsOptions {
   category?: string;
   includeOutOfStock?: boolean;
   partnerId?: string;
+  includeAllStatuses?: boolean;
 }
 
 // Transform database product to UI product
@@ -54,7 +56,8 @@ function transformProduct(
     product_images: dbProduct.product_images || [],
     created_at: dbProduct.created_at,
     originalPrice: undefined,
-    product_url: dbProduct.product_url || ''
+    product_url: dbProduct.product_url || '',
+    status: dbProduct.status || 'draft'
   };
 }
 
@@ -95,7 +98,8 @@ export async function createProduct(data: ProductData): Promise<Product> {
         category: data.category,
         partner_id: session.session.user.id,
         created_at: new Date().toISOString(),
-        product_url: customUrl
+        product_url: customUrl,
+        status: data.status || 'draft'
       }])
       .select()
       .single();
@@ -186,7 +190,8 @@ export async function updateProduct(id: string, data: ProductData): Promise<Prod
         metadata: cleanMetadata,
         tags: data.tags || [],
         category: data.category,
-        product_url: customUrl
+        product_url: customUrl,
+        status: data.status || 'draft'
       })
       .eq('id', id)
       .select()
@@ -251,35 +256,19 @@ export async function updateProduct(id: string, data: ProductData): Promise<Prod
   }
 }
 
-export async function getProducts({
-  page = 1,
-  limit = 12,
+export async function getProducts({ 
+  page = 1, 
+  limit = 10, 
   category,
-  includeOutOfStock = true,
-  partnerId
-}: GetProductsOptions = {}) {
+  includeOutOfStock = false,
+  partnerId,
+  includeAllStatuses = false
+}: GetProductsOptions = {}): Promise<{ products: Product[], total: number }> {
   try {
-    console.log('Fetching products with params:', { page, limit, category, includeOutOfStock, partnerId });
-    const startTime = Date.now();
-
-    // Calculate pagination
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
-
     let query = supabase
       .from('products')
       .select(`
-        id,
-        name,
-        description,
-        price,
-        currency,
-        stock,
-        size,
-        tags,
-        category,
-        created_at,
-        product_url,
+        *,
         product_images (
           id,
           image_url,
@@ -293,48 +282,36 @@ export async function getProducts({
       `, { count: 'exact' });
 
     // Apply filters
+    if (category) {
+      query = query.eq('category', category);
+    }
+
     if (!includeOutOfStock) {
       query = query.gt('stock', 0);
     }
 
     if (partnerId) {
       query = query.eq('partner_id', partnerId);
+    } else if (!includeAllStatuses) {
+      // Only show active products for public viewing
+      query = query.eq('status', 'active');
     }
 
-    // Use array overlaps for category filter
-    if (category) {
-      const categoryTag = category.toLowerCase();
-      query = query.or(`tags.cs.{${categoryTag}},tags.ilike.%${categoryTag}%`);
-    }
+    // Add pagination
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+    query = query.range(from, to);
 
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, to);
+    const { data, error, count } = await query;
 
-    const endTime = Date.now();
-    console.log('Query execution time:', endTime - startTime, 'ms');
-    console.log('Results count:', count);
+    if (error) throw error;
+    if (!data || !count) return { products: [], total: 0 };
 
-    if (error) {
-      console.error('Supabase query error:', error);
-      throw error;
-    }
-    
-    if (!data) {
-      console.log('No data returned from Supabase');
-      return { products: [], total: 0 };
-    }
-    
-    const transformedProducts = data.map(transformProduct);
-    console.log('Transformed products count:', transformedProducts.length);
-    
-    return {
-      products: transformedProducts,
-      total: count || 0
-    };
+    const products = data.map(transformProduct);
+    return { products, total: count };
   } catch (error) {
     console.error('Error fetching products:', error);
-    return { products: [], total: 0 };
+    throw error;
   }
 }
 

@@ -13,6 +13,7 @@ export interface Product {
   created_at: string;
   gender?: 'male' | 'female' | 'unisex';
   product_url?: string;
+  status: 'active' | 'draft';
 }
 
 export interface ProductImage {
