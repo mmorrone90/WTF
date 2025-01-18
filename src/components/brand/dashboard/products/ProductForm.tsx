@@ -74,9 +74,11 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
   const [newMetadataKey, setNewMetadataKey] = useState('');
   const [newMetadataValue, setNewMetadataValue] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(() => {
-    if (initialData?.category) {
-      const category = findCategory(initialData.category);
-      return category || null;
+    if (initialData?.category && typeof initialData.category === 'string') {
+      const foundCategory = Object.values(PRODUCT_CATEGORIES).find(
+        cat => cat.label.toLowerCase() === initialData.category.toLowerCase()
+      );
+      return foundCategory || null;
     }
     return null;
   });
@@ -139,7 +141,7 @@ export default function ProductForm({ initialData, onSubmit, onClose, isLoading 
               Change category
             </button>
             <span className="text-sm text-text-grey">
-              {selectedCategory.label}
+              Current: {selectedCategory.label}
             </span>
           </div>
         </div>
