@@ -313,6 +313,13 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
           ? a.stock - b.stock
           : b.stock - a.stock;
       }
+      if (sortConfig.column === 'status') {
+        const statusA = a.status || 'draft';
+        const statusB = b.status || 'draft';
+        return sortConfig.direction === 'asc'
+          ? statusA.localeCompare(statusB)
+          : statusB.localeCompare(statusA);
+      }
       return 0;
     });
   };
@@ -351,7 +358,7 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-dark-grey rounded-lg shadow-lg z-10">
             <div className="py-1">
-              {(column === 'title' || column === 'category') && (
+              {(column === 'title' || column === 'category' || column === 'status') && (
                 <>
                   <button
                     onClick={() => handleSort('asc')}
@@ -361,7 +368,7 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
                       <Check className="w-4 h-4 mr-2" />
                     )}
                     <span className={sortConfig?.column === column && sortConfig?.direction === 'asc' ? 'text-neon-yellow' : ''}>
-                      A-Z
+                      {column === 'status' ? 'Draft → Active' : 'A-Z'}
                     </span>
                   </button>
                   <button
@@ -372,7 +379,7 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
                       <Check className="w-4 h-4 mr-2" />
                     )}
                     <span className={sortConfig?.column === column && sortConfig?.direction === 'desc' ? 'text-neon-yellow' : ''}>
-                      Z-A
+                      {column === 'status' ? 'Active → Draft' : 'Z-A'}
                     </span>
                   </button>
                 </>
@@ -575,7 +582,12 @@ export default function ProductsTable({ onImportClick }: ProductsTableProps) {
                   <FilterMenu column="stock" />
                 </div>
               </TableHead>
-              <TableHead className="w-24">Status</TableHead>
+              <TableHead className="w-24">
+                <div className="flex items-center">
+                  Status
+                  <FilterMenu column="status" />
+                </div>
+              </TableHead>
               <TableHead className="w-48">Product URL</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
